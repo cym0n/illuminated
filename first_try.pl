@@ -90,6 +90,16 @@ while($fighting)
         my $res = attack_enemy(lc($1));
         $command_given = 1 if ($res);
     }
+    elsif($answer =~ /^C (.*)$/)
+    {
+        my $res = fly_closer(lc($1));
+        $command_given = 1 if ($res);
+    }
+    elsif($answer eq 'F')
+    {
+        my $res = fly_away();
+        $command_given = 1 if ($res);
+    }
     $answer = undef;
     if($command_given)
     {
@@ -125,8 +135,8 @@ sub dialog
         @options = qw( S C F A );
         say "Combat turn";
         say "[S]how current situation";
-        say "[C]lose on enemy";
-        say "[F]ly away from enemies";
+        say "[C]lose on enemy (speed try)";
+        say "[F]ly away from enemies (speed try)";
         say "[A]ttack enemy (mind try)";
     }
     elsif($d eq 'close combat')
@@ -340,6 +350,87 @@ sub attack_enemy
     return 1;
 }
 
+sub fly_closer
+{
+    my $fname = shift;
+    if( ! exists $foes->{$fname} ){ say "$fname doesn't exists"; return 0 }; 
+    if( ! $foes->{$fname}->{active} ){ say "$fname is not active"; return 0 };
+    if( $distance_matrix->{"Paladin"}->{$fname} eq 'close' ) { say "$fname already close"; return 0 };
+    say "Flying closer to $fname (speed try)";
+    my $throw = dice($players->{'Paladin'}->{speed});
+    if($throw >= 5)
+    {
+        say "Successfull approach";
+        move($fname, 'closer');
+    }
+    elsif($throw >= 3)
+    {
+        say "Successfull approach with consequences";
+        move($fname, 'closer');
+        assign_action_point($fname);
+    }
+    else
+    {
+        say "Failed to approach!";
+        assign_action_point($fname);
+    }
+    return 1;
+}
+
+sub fly_away
+{
+    return 0 if(! someone_near());
+    say "Flying away from enemies (speed try)";
+    my $throw = dice($players->{'Paladin'}->{speed});
+    if($throw >= 5)
+    {
+        say "Successfully escaped!";
+        foreach my $fname ( @active_fnames )
+        {
+            move($fname, 'farther');
+        }
+    }
+    elsif($throw >= 3)
+    {
+        say "Uncomplete escape! Rolling enemies one by one";
+        foreach my $fname ( @active_fnames )
+        {
+            if($distance_matrix->{"Paladin"}->{$fname} ne 'far' &&
+               $distance_matrix->{"Paladin"}->{$fname} ne 'none' )
+            { 
+                my $throw = dice(1);
+                if($throw >= 5)
+                {
+                    move($fname, 'farther');
+                }
+                elsif($throw >= 3)
+                {
+                    say "$fname still " . $distance_matrix->{"Paladin"}->{$fname};
+                }
+                else
+                {
+                    say "$fname still " . $distance_matrix->{"Paladin"}->{$fname} . " with consequences";
+                    assign_action_point($fname);
+                }
+            }
+        }
+    }
+    else
+    {
+        say "Failed to escape!";
+        foreach my $fname ( @active_fnames )
+        {
+            if($distance_matrix->{"Paladin"}->{$fname} ne 'far' &&
+               $distance_matrix->{"Paladin"}->{$fname} ne 'none' )
+            { 
+                assign_action_point($fname);
+            }
+        }
+    }
+    return 1;
+}
+
+
 sub harm_enemy
 {
     my $fname = shift;
@@ -440,16 +531,7 @@ sub ia
     elsif($command eq 'away')
     {
         say "$fname steps away from player!";
-        if($distance_matrix->{"Paladin"}->{$fname} eq 'close')
-        {
-            $distance_matrix->{"Paladin"}->{$fname} = 'near';
-            "$fname is now near";
-        }
-        elsif($distance_matrix->{"Paladin"}->{$fname} eq 'near')
-        {
-            $distance_matrix->{"Paladin"}->{$fname} = 'far';
-            "$fname is now far";
-        }
+        move($fname, 'farther');
     }
     elsif($command eq 'attack')
     {
@@ -459,11 +541,7 @@ sub ia
     elsif($command eq 'pursuit')
     {
         say "$fname flyes to the player!";
-        if($distance_matrix->{"Paladin"}->{$fname} eq 'far')
-        {
-            $distance_matrix->{"Paladin"}->{$fname} = 'near';
-            "$fname is now near";
-        }
+        move($fname, 'closer');
     }
 }
 
@@ -472,6 +550,50 @@ sub harm_player
     my $damage = shift;
     $players->{"Paladin"}->{health} = $players->{"Paladin"}->{health} - 1;
     say "Player receives $damage damages. Player's health is now " . $players->{"Paladin"}->{health};
+}
+
+sub move
+{
+    my $fname = shift;
+    my $direction = shift;
+    return 0 if $distance_matrix->{"Paladin"}->{$fname} eq 'none';
+    if($direction eq 'closer')
+    {
+        if($distance_matrix->{"Paladin"}->{$fname} eq 'far')
+        {
+            $distance_matrix->{"Paladin"}->{$fname} = 'near';  
+            say "$fname is now near";
+        }
+        elsif($distance_matrix->{"Paladin"}->{$fname} eq 'near')
+        {
+            $distance_matrix->{"Paladin"}->{$fname} = 'close';  
+            say "$fname is now close";
+        }    
+        else
+        {
+            #say "Impossible movement";
+            return 0;
+        }
+    }
+    elsif($direction eq 'farther')
+    {
+        if($distance_matrix->{"Paladin"}->{$fname} eq 'near')
+        {
+            $distance_matrix->{"Paladin"}->{$fname} = 'far';  
+            say "$fname is now far";
+        }
+        elsif($distance_matrix->{"Paladin"}->{$fname} eq 'close')
+        {
+            $distance_matrix->{"Paladin"}->{$fname} = 'near';  
+            say "$fname is now near";
+        }    
+        else
+        {
+            #say "Impossible movement";
+            return 0;
+        }
+    }
+    return 1;
 }
 
 
@@ -491,6 +613,15 @@ sub unaware_present
     foreach my $fname ( @active_fnames )
     {
         return $fname if ! $foes->{$fname}->{aware};
+    }
+    return undef;
+}
+
+sub someone_near
+{
+    foreach my $fname ( @active_fnames )
+    {
+        return $fname if($distance_matrix->{"Paladin"}->{$fname} eq 'close' || $distance_matrix->{"Paladin"}->{$fname} eq 'near')
     }
     return undef;
 }
