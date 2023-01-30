@@ -85,6 +85,11 @@ while($fighting)
     {
         situation();
     }
+    elsif($answer eq 'A')
+    {
+        my $res = attack_enemy();
+        $command_given = 1 if ($res);
+    }
     elsif($answer =~ /^A (.*)$/)
     {
         my $res = attack_enemy(lc($1));
@@ -95,10 +100,19 @@ while($fighting)
         my $res = fly_closer(lc($1));
         $command_given = 1 if ($res);
     }
-    elsif($answer eq 'F')
+    elsif($answer =~ /^F (.*)$/)
     {
-        my $res = fly_away();
+        my $res = fly_away(lc($1));
         $command_given = 1 if ($res);
+    }
+    elsif($answer eq 'D')
+    {
+        my $res = disengage();
+        $command_given = 1 if ($res);
+    }
+    else
+    {
+        say "Bad command";
     }
     $answer = undef;
     if($command_given)
@@ -112,6 +126,17 @@ while($fighting)
         }
         run_enemies();
     }
+    if($players->{"Paladin"}->{health} <= 0)
+    {
+        say "DEFEAT! Player destroyed!";
+        $fighting = 0;
+    }
+    if(! @active_fnames)
+    {
+        say "VICTORY! All enemies have been destroyed!";
+        $fighting = 0;
+    }    
+
 }
 
 #SUBS
@@ -313,6 +338,15 @@ sub situation
 sub attack_enemy
 {
     my $fname = shift;
+    if(close_combat())
+    {
+        if(! $fname)
+        {
+            $fname = close_combat();
+        }
+        if($fname ne close_combat()) { say "Enemy close. You can't attack others"; return 0 };
+    } 
+    if(! $fname) { say "No enemy given"; return 0 };
     if( ! exists $foes->{$fname} ){ say "$fname doesn't exists"; return 0 }; 
     if( ! $foes->{$fname}->{active} ){ say "$fname is not active"; return 0 };
     if( $distance_matrix->{"Paladin"}->{$fname} eq 'far' || $distance_matrix->{"Paladin"}->{$fname} eq 'none' ){ say "$fname is far"; return 0 };
@@ -379,13 +413,25 @@ sub fly_closer
 
 sub fly_away
 {
-    return 0 if(! someone_near());
-    say "Flying away from enemies (speed try)";
+    my $who = shift;
+    my @targets;
+    if($who eq '_all')
+    {
+        if(! someone_near()) { say "Nobody is near"; return 0 }
+        say "Flying away from all enemies (speed try)";
+        @targets = ( @active_fnames );
+    }
+    else
+    {
+        if($distance_matrix->{"Paladin"}->{$who} ne 'near') { say "$who is not near"; return 0 }
+        say "Flying away from $who (speed try)";
+        @targets = ( $who );
+    }
     my $throw = dice($players->{'Paladin'}->{speed});
     if($throw >= 5)
     {
         say "Successfully escaped!";
-        foreach my $fname ( @active_fnames )
+        foreach my $fname ( @targets )
         {
             move($fname, 'farther');
         }
@@ -393,7 +439,7 @@ sub fly_away
     elsif($throw >= 3)
     {
         say "Uncomplete escape! Rolling enemies one by one";
-        foreach my $fname ( @active_fnames )
+        foreach my $fname ( @targets )
         {
             if($distance_matrix->{"Paladin"}->{$fname} ne 'far' &&
                $distance_matrix->{"Paladin"}->{$fname} ne 'none' )
@@ -418,7 +464,7 @@ sub fly_away
     else
     {
         say "Failed to escape!";
-        foreach my $fname ( @active_fnames )
+        foreach my $fname ( @targets )
         {
             if($distance_matrix->{"Paladin"}->{$fname} ne 'far' &&
                $distance_matrix->{"Paladin"}->{$fname} ne 'none' )
@@ -430,12 +476,37 @@ sub fly_away
     return 1;
 }
 
+sub disengage
+{
+    my $fname = close_combat();
+    if(! $fname) { say "No need to disengage"; return 0 };
+    say "Disengaging from $fname (power try)";
+    my $throw = dice($players->{'Paladin'}->{power});
+    if($throw >= 5)
+    {
+        say "Successfully disengaged!";
+        move($fname, 'farther');
+    }
+    elsif($throw >= 3)
+    {
+        say "Disengaged with consequences";
+        move($fname, 'farther');
+        assign_action_point($fname);
+    }
+    else
+    {
+        say "Disengaging failed!";
+        assign_action_point($fname);
+    }
+    return 1;
+}
+
 
 sub harm_enemy
 {
     my $fname = shift;
     my $damage = shift;
-    $foes->{$fname}->{health} = $foes->{$fname}->{health} - 1;
+    $foes->{$fname}->{health} = $foes->{$fname}->{health} - $damage;
     say "$fname gets $damage dameges";
     if($foes->{$fname}->{health} <= 0)
     {
