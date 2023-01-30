@@ -11,6 +11,12 @@ my $mecha = {
     speed => 2,
     mind => 1,
 }; 
+my $mecha2 = {
+    health => 10,
+    power => 1,
+    speed => 1,
+    mind => 3,
+}; 
 
 my $sentry = {
     health => 2
@@ -18,9 +24,13 @@ my $sentry = {
 
 my $players =
     { 
-        "Paladin" => dclone($mecha)
+        "Paladin" => dclone($mecha),
+        "Templar" => dclone($mecha2)
     };
 $players->{"Paladin"}->{active} = 1;
+$players->{"Templar"}->{active} = 1;
+
+my @active_players = qw( Paladin Templar );
 
 my @fnames = qw ( alpha beta gamma delta epsilon ro iota );
 my @active_fnames = @{dclone(\@fnames)};
@@ -33,7 +43,10 @@ foreach my $fname ( @fnames )
     $foes->{$fname} = dclone($sentry);
     $foes->{$fname}->{active} = 1;
     $foes->{$fname}->{aware} = 0;
-    $distance_matrix->{"Paladin"}->{$fname} = 'none';
+    foreach my $p (@active_players)
+    {
+        $distance_matrix->{$p}->{$fname} = 'none';
+    }
     $foes->{$fname}->{action_points} = 0;
 }
 my @aw_words = qw(unaware aware);
@@ -42,36 +55,47 @@ my $answer;
 
 #MAIN LOOP
 
-while(! $answer)
+my $playing = undef;
+
+foreach my $p (@active_players)
 {
-    print "\n";
-    $answer = dialog('entering patrol')
-}
-say "You chose $answer";
-if($answer eq 'N')
-{
-    say "No strategy chosen. I will throw a die for each foe";
-    start_patrol('N');
-}
-elsif($answer eq 'S')
-{
-    say "Stealth passage chosen. Rolling by intelligence about sneaking through enemy lines";
-    start_patrol('S');
-}
-elsif($answer eq 'R')
-{
-    say "Rush in chosen. Rolling by power about surprise attack on enemy patrol";
-    start_patrol('R');
+    while(! $answer)
+    {
+        $playing = $p;
+        print "\n";
+        say "ACTIVE PLAYER is $p";
+        $answer = dialog('entering patrol')
+    }
+    say "You chose $answer";
+    if($answer eq 'N')
+    {
+        say "No strategy chosen. I will throw a die for each foe";
+        start_patrol('N');
+    }
+    elsif($answer eq 'S')
+    {
+        say "Stealth passage chosen. Rolling by intelligence about sneaking through enemy lines";
+        start_patrol('S');
+    }
+    elsif($answer eq 'R')
+    {
+        say "Rush in chosen. Rolling by power about surprise attack on enemy patrol";
+        start_patrol('R');
+    }
+    $answer = undef;
 }
 
 my $fighting = 1;
 $answer = undef;
+my $player_cursor = 0;
 while($fighting)
 {
     my $command_given = 0;
+    $playing = $active_players[$player_cursor];
     while(! $answer)
     {
         print "\n";
+        say "ACTIVE PLAYER is $playing";
         if(close_combat())
         {
             $answer = dialog('close combat')
@@ -119,12 +143,17 @@ while($fighting)
     {
         say "Consequences of your actions...";
         run_enemies();
-        say "End of turn management...";
-        for(my $i = 0; $i < 1; $i++)
+        $player_cursor++;
+        if($player_cursor > $#active_players)
         {
-            assign_action_point(undef);
+            $player_cursor = 0;
+            say "End of turn management...";
+            for(my $i = 0; $i < 1; $i++)
+            {
+                assign_action_point(undef);
+            }
+            run_enemies();
         }
-        run_enemies();
     }
     if($players->{"Paladin"}->{health} <= 0)
     {
@@ -146,12 +175,20 @@ sub dialog
     my $d = shift;
     my $answer = undef;
     my @options = ();
-    if($d eq 'entering patrol')
+    if($d eq 'entering patrol' && unaware_present())
     {
         @options = qw( N S R );
         say "Entering enemy patrol zone";
         say "[N]o strategy";
         say "[S]tealth passage (mind try)";
+        say "[R]ush in (power try)";
+        print "Choose: ";
+    }
+    elsif($d eq 'entering patrol' && ! unaware_present())
+    {
+        @options = qw( N R );
+        say "Entering enemy patrol zone (all enemy units already alerted)";
+        say "[N]o strategy";
         say "[R]ush in (power try)";
         print "Choose: ";
     }
@@ -217,7 +254,7 @@ sub start_patrol
     }
     elsif($command eq 'S')
     {
-        my $throw = dice($players->{'Paladin'}->{mind});
+        my $throw = dice($players->{$playing}->{mind});
         if($throw >= 5)
         {
             say "PASSED UNDETECTED!";
@@ -238,13 +275,13 @@ sub start_patrol
     }
     elsif($command eq 'R')
     {
-        my $throw = dice($players->{'Paladin'}->{power});
+        my $throw = dice($players->{$playing}->{power});
         if($throw >= 5)
         {
             say "Enemy killed by surprise! Close to a second enemy. All enemies aware!";
             my $killed = kill_enemy();
             my $who = $active_fnames[rand @active_fnames];
-            $distance_matrix->{"Paladin"}->{$who} = 'close';
+            $distance_matrix->{$playing}->{$who} = 'close';
             $foes->{$who}->{aware} = 1;
             say "$who aware and close";
             foreach my $fname ( @active_fnames )
@@ -259,7 +296,7 @@ sub start_patrol
         {
             say "Close to an enemy! All enemies aware!";
             my $who = $active_fnames[rand @active_fnames];
-            $distance_matrix->{"Paladin"}->{$who} = 'close';
+            $distance_matrix->{$playing}->{$who} = 'close';
             $foes->{$who}->{aware} = 1;
             say "$who aware and close";
             foreach my $fname ( @active_fnames )
@@ -308,7 +345,7 @@ sub setup_enemy
         $d = $distance ? $distance : 'near';
     }
     $foes->{$fname}->{aware} = $a;
-    $distance_matrix->{"Paladin"}->{$fname} = $d if $a;
+    $distance_matrix->{$playing}->{$fname} = $d if $a;
 
     if($a)
     {
@@ -323,12 +360,12 @@ sub setup_enemy
 sub situation
 {
     print "\n";
-    say "Paladin: HEALTH " . $players->{"Paladin"}->{health};
+    say "$playing: HEALTH " . $players->{$playing}->{health};
     print "\n";
     foreach my $fname ( @active_fnames )
     {
         say "$fname: HEALTH " . $foes->{$fname}->{health} . " " . 
-            join(" ", $aw_words[ $foes->{$fname}->{aware} ], $distance_matrix->{"Paladin"}->{$fname});    
+            join(" ", $aw_words[ $foes->{$fname}->{aware} ], $distance_matrix->{$playing}->{$fname});    
     }
     print "\n";
 }
@@ -349,19 +386,19 @@ sub attack_enemy
     if(! $fname) { say "No enemy given"; return 0 };
     if( ! exists $foes->{$fname} ){ say "$fname doesn't exists"; return 0 }; 
     if( ! $foes->{$fname}->{active} ){ say "$fname is not active"; return 0 };
-    if( $distance_matrix->{"Paladin"}->{$fname} eq 'far' || $distance_matrix->{"Paladin"}->{$fname} eq 'none' ){ say "$fname is far"; return 0 };
+    if( $distance_matrix->{$playing}->{$fname} eq 'far' || $distance_matrix->{$playing}->{$fname} eq 'none' ){ say "$fname is far"; return 0 };
     my $try;
     my $damage;
-    if( $distance_matrix->{"Paladin"}->{$fname} eq 'near')
+    if( $distance_matrix->{$playing}->{$fname} eq 'near')
     {
         say "Attacking $fname with gun (mind try)";
-        $try = $players->{'Paladin'}->{mind};
+        $try = $players->{$playing}->{mind};
         $damage = 1;
     }
-    elsif( $distance_matrix->{"Paladin"}->{$fname} eq 'close')
+    elsif( $distance_matrix->{$playing}->{$fname} eq 'close')
     {
         say "Attacking $fname with sword (power try)";
-        $try = $players->{'Paladin'}->{power};
+        $try = $players->{$playing}->{power};
         $damage = 2;
     }
     my $throw = dice($try);
@@ -389,9 +426,9 @@ sub fly_closer
     my $fname = shift;
     if( ! exists $foes->{$fname} ){ say "$fname doesn't exists"; return 0 }; 
     if( ! $foes->{$fname}->{active} ){ say "$fname is not active"; return 0 };
-    if( $distance_matrix->{"Paladin"}->{$fname} eq 'close' ) { say "$fname already close"; return 0 };
+    if( $distance_matrix->{$playing}->{$fname} eq 'close' ) { say "$fname already close"; return 0 };
     say "Flying closer to $fname (speed try)";
-    my $throw = dice($players->{'Paladin'}->{speed});
+    my $throw = dice($players->{$playing}->{speed});
     if($throw >= 5)
     {
         say "Successfull approach";
@@ -423,11 +460,11 @@ sub fly_away
     }
     else
     {
-        if($distance_matrix->{"Paladin"}->{$who} ne 'near') { say "$who is not near"; return 0 }
+        if($distance_matrix->{$playing}->{$who} ne 'near') { say "$who is not near"; return 0 }
         say "Flying away from $who (speed try)";
         @targets = ( $who );
     }
-    my $throw = dice($players->{'Paladin'}->{speed});
+    my $throw = dice($players->{$playing}->{speed});
     if($throw >= 5)
     {
         say "Successfully escaped!";
@@ -441,8 +478,8 @@ sub fly_away
         say "Uncomplete escape! Rolling enemies one by one";
         foreach my $fname ( @targets )
         {
-            if($distance_matrix->{"Paladin"}->{$fname} ne 'far' &&
-               $distance_matrix->{"Paladin"}->{$fname} ne 'none' )
+            if($distance_matrix->{$playing}->{$fname} ne 'far' &&
+               $distance_matrix->{$playing}->{$fname} ne 'none' )
             { 
                 my $throw = dice(1);
                 if($throw >= 5)
@@ -451,11 +488,11 @@ sub fly_away
                 }
                 elsif($throw >= 3)
                 {
-                    say "$fname still " . $distance_matrix->{"Paladin"}->{$fname};
+                    say "$fname still " . $distance_matrix->{$playing}->{$fname};
                 }
                 else
                 {
-                    say "$fname still " . $distance_matrix->{"Paladin"}->{$fname} . " with consequences";
+                    say "$fname still " . $distance_matrix->{$playing}->{$fname} . " with consequences";
                     assign_action_point($fname);
                 }
             }
@@ -466,8 +503,8 @@ sub fly_away
         say "Failed to escape!";
         foreach my $fname ( @targets )
         {
-            if($distance_matrix->{"Paladin"}->{$fname} ne 'far' &&
-               $distance_matrix->{"Paladin"}->{$fname} ne 'none' )
+            if($distance_matrix->{$playing}->{$fname} ne 'far' &&
+               $distance_matrix->{$playing}->{$fname} ne 'none' )
             { 
                 assign_action_point($fname);
             }
@@ -481,7 +518,7 @@ sub disengage
     my $fname = close_combat();
     if(! $fname) { say "No need to disengage"; return 0 };
     say "Disengaging from $fname (power try)";
-    my $throw = dice($players->{'Paladin'}->{power});
+    my $throw = dice($players->{$playing}->{power});
     if($throw >= 5)
     {
         say "Successfully disengaged!";
@@ -674,7 +711,7 @@ sub close_combat
 {
     foreach my $fname ( @active_fnames )
     {
-        return $fname if($distance_matrix->{"Paladin"}->{$fname} eq 'close')
+        return $fname if($distance_matrix->{$playing}->{$fname} eq 'close')
     }
     return undef;
 }
@@ -692,7 +729,7 @@ sub someone_near
 {
     foreach my $fname ( @active_fnames )
     {
-        return $fname if($distance_matrix->{"Paladin"}->{$fname} eq 'close' || $distance_matrix->{"Paladin"}->{$fname} eq 'near')
+        return $fname if($distance_matrix->{$playing}->{$fname} eq 'close' || $distance_matrix->{$playing}->{$fname} eq 'near')
     }
     return undef;
 }
