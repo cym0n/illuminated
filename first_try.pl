@@ -155,9 +155,9 @@ while($fighting)
             run_enemies();
         }
     }
-    if($players->{"Paladin"}->{health} <= 0)
+    if(! @active_players)
     {
-        say "DEFEAT! Player destroyed!";
+        say "DEFEAT! Players destroyed!";
         $fighting = 0;
     }
     if(! @active_fnames)
@@ -175,7 +175,7 @@ sub dialog
     my $d = shift;
     my $answer = undef;
     my @options = ();
-    if($d eq 'entering patrol' && unaware_present())
+    if($d eq 'entering patrol' && ! aware_present())
     {
         @options = qw( N S R );
         say "Entering enemy patrol zone";
@@ -184,10 +184,10 @@ sub dialog
         say "[R]ush in (power try)";
         print "Choose: ";
     }
-    elsif($d eq 'entering patrol' && ! unaware_present())
+    elsif($d eq 'entering patrol' && aware_present())
     {
         @options = qw( N R );
-        say "Entering enemy patrol zone (all enemy units already alerted)";
+        say "Entering enemy patrol zone (enemy units already alerted)";
         say "[N]o strategy";
         say "[R]ush in (power try)";
         print "Choose: ";
@@ -345,7 +345,20 @@ sub setup_enemy
         $d = $distance ? $distance : 'near';
     }
     $foes->{$fname}->{aware} = $a;
-    $distance_matrix->{$playing}->{$fname} = $d if $a;
+    foreach my $p ( @active_players )
+    {
+        if($p eq $playing)
+        {
+            $distance_matrix->{$p}->{$fname} = $d if $a;
+        }
+        else
+        {
+            if($distance_matrix->{$p}->{$fname} eq 'none')
+            {
+                $distance_matrix->{$p}->{$fname} = 'far';
+            }
+        }
+    }
 
     if($a)
     {
@@ -609,6 +622,7 @@ sub ia
 {
     my $fname = shift;
     my $command = undef;
+    my $target = undef;
     if(unaware_present())
     {
         my $throw = dice(1, 1);
@@ -616,17 +630,19 @@ sub ia
     }
     if(! $command)
     {
-        if($distance_matrix->{"Paladin"}->{$fname} eq 'close')
+
+        my %c = ( 'close' => 'away',
+                  'near'  => 'attack',
+                  'far'   => 'pursuit' );
+        foreach my $distance (keys %c)
         {
-            $command = 'away';
-        }
-        elsif($distance_matrix->{"Paladin"}->{$fname} eq 'near')
-        {
-            $command = 'attack';
-        }
-        elsif($distance_matrix->{"Paladin"}->{$fname} eq 'far')
-        {
-            $command = 'pursuit';
+            my $p = f_distance($fname, $distance);
+            if($p)
+            {
+                $command = $c{$distance};
+                $target = $p;
+                last;
+            }
         }
     }
     if($command eq 'warn')
@@ -634,48 +650,58 @@ sub ia
         my $other = unaware_present();
         say "$fname reaches $other and makes him aware!";
         $foes->{$other}->{aware} = 1;
-        $distance_matrix->{"Paladin"}->{$other} = 'far';
+        foreach my $p (@active_players)
+        {
+            $distance_matrix->{$p}->{$other} = 'far';
+        }
     }
     elsif($command eq 'away')
     {
-        say "$fname steps away from player!";
-        move($fname, 'farther');
+        say "$fname steps away from $target!";
+        move($fname, 'farther', $target);
     }
     elsif($command eq 'attack')
     {
-        say "$fname deals 1 damage to player!";
-        harm_player(1);
+        say "$fname deals 1 damage to $target!";
+        harm_player($target, 1);
     }
     elsif($command eq 'pursuit')
     {
-        say "$fname flyes to the player!";
-        move($fname, 'closer');
+        say "$fname flyes to the $target!";
+        move($fname, 'closer', $target);
     }
 }
 
 sub harm_player
 {
+    my $target = shift;
     my $damage = shift;
-    $players->{"Paladin"}->{health} = $players->{"Paladin"}->{health} - 1;
-    say "Player receives $damage damages. Player's health is now " . $players->{"Paladin"}->{health};
+    $players->{$target}->{health} = $players->{$target}->{health} - 1;
+    say "$target receives $damage damages. $target" . "'s health is now " . $players->{$target}->{health};
+    if($players->{$target}->{health} <= 0)
+    {
+        say "$target killed!";
+        @active_players = grep { $_ ne $target } @active_players;
+    }
 }
 
 sub move
 {
     my $fname = shift;
     my $direction = shift;
-    return 0 if $distance_matrix->{"Paladin"}->{$fname} eq 'none';
+    my $target = shift;
+    return 0 if $distance_matrix->{$target}->{$fname} eq 'none';
     if($direction eq 'closer')
     {
-        if($distance_matrix->{"Paladin"}->{$fname} eq 'far')
+        if($distance_matrix->{$target}->{$fname} eq 'far')
         {
-            $distance_matrix->{"Paladin"}->{$fname} = 'near';  
-            say "$fname is now near";
+            $distance_matrix->{$target}->{$fname} = 'near';  
+            say "$fname is now near to $target";
         }
-        elsif($distance_matrix->{"Paladin"}->{$fname} eq 'near')
+        elsif($distance_matrix->{$target}->{$fname} eq 'near')
         {
-            $distance_matrix->{"Paladin"}->{$fname} = 'close';  
-            say "$fname is now close";
+            $distance_matrix->{$target}->{$fname} = 'close';  
+            say "$fname is now close to $target";
         }    
         else
         {
@@ -685,15 +711,15 @@ sub move
     }
     elsif($direction eq 'farther')
     {
-        if($distance_matrix->{"Paladin"}->{$fname} eq 'near')
+        if($distance_matrix->{$target}->{$fname} eq 'near')
         {
-            $distance_matrix->{"Paladin"}->{$fname} = 'far';  
-            say "$fname is now far";
+            $distance_matrix->{$target}->{$fname} = 'far';  
+            say "$fname is now far from $target";
         }
-        elsif($distance_matrix->{"Paladin"}->{$fname} eq 'close')
+        elsif($distance_matrix->{$target}->{$fname} eq 'close')
         {
-            $distance_matrix->{"Paladin"}->{$fname} = 'near';  
-            say "$fname is now near";
+            $distance_matrix->{$target}->{$fname} = 'near';  
+            say "$fname is now near to $target";
         }    
         else
         {
@@ -724,6 +750,14 @@ sub unaware_present
     }
     return undef;
 }
+sub aware_present
+{
+    foreach my $fname ( @active_fnames )
+    {
+        return $fname if $foes->{$fname}->{aware};
+    }
+    return undef;
+}
 
 sub someone_near
 {
@@ -733,3 +767,31 @@ sub someone_near
     }
     return undef;
 }
+
+sub f_distance
+{
+    my $fname = shift;
+    my $distance = shift;
+    my $player = shift;
+    if($player)
+    {
+        return $player if($distance_matrix->{$player}->{$fname} eq $distance) 
+    }
+    else
+    {
+        my @urn = ();
+        foreach my $p (@active_players)
+        {
+            push @urn, $p if($distance_matrix->{$p}->{$fname} eq $distance)
+        }   
+        if(@urn)
+        {
+            return $urn[rand @urn]
+        }
+        else
+        {
+            undef;
+        }
+    }
+}
+
