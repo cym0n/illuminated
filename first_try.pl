@@ -18,19 +18,26 @@ my $mecha2 = {
     mind => 3,
 }; 
 
-my $sentry = {
-    health => 2
-};
+my %foe_mechas = (
+    thug => {
+        health => 2,
+        type => 'thug'
+    },
+    gunner => {
+        health => 2,
+        type => 'gunner',
+    }
+);
 
 my $players =
     { 
-        "Paladin" => dclone($mecha),
-        "Templar" => dclone($mecha2)
+        "paladin" => dclone($mecha),
+        "templar" => dclone($mecha2)
     };
-$players->{"Paladin"}->{active} = 1;
-$players->{"Templar"}->{active} = 1;
+$players->{"paladin"}->{active} = 1;
+$players->{"templar"}->{active} = 1;
 
-my @active_players = qw( Paladin Templar );
+my @active_players = qw( paladin templar );
 
 my @fnames = qw ( alpha beta gamma delta epsilon ro iota );
 my @active_fnames = @{dclone(\@fnames)};
@@ -38,9 +45,20 @@ my $foes;
 
 my $distance_matrix;
 
+my %foe_type = (
+    'alpha' => 'thug',
+    'beta' => 'thug',
+    'gamma' => 'thug',
+    'delta' => 'thug',
+    'epsilon' => 'thug',
+    'ro' => 'gunner',
+    'iota' => 'gunner',
+);
+
+
 foreach my $fname ( @fnames )
 {
-    $foes->{$fname} = dclone($sentry);
+    $foes->{$fname} = dclone($foe_mechas{$foe_type{$fname}});
     $foes->{$fname}->{active} = 1;
     $foes->{$fname}->{aware} = 0;
     foreach my $p (@active_players)
@@ -108,6 +126,10 @@ while($fighting)
     if($answer eq 'S')
     {
         situation();
+    }
+    elsif($answer =~ /^S (.*)$/)
+    {
+        situation(lc($1));
     }
     elsif($answer eq 'A')
     {
@@ -372,13 +394,14 @@ sub setup_enemy
 
 sub situation
 {
+    my $who = shift || $playing;
     print "\n";
-    say "$playing: HEALTH " . $players->{$playing}->{health};
+    say "$who: HEALTH " . $players->{$who}->{health};
     print "\n";
     foreach my $fname ( @active_fnames )
     {
-        say "$fname: HEALTH " . $foes->{$fname}->{health} . " " . 
-            join(" ", $aw_words[ $foes->{$fname}->{aware} ], $distance_matrix->{$playing}->{$fname});    
+        say "$fname (" .  $foes->{$fname}->{type} . "): HEALTH " . $foes->{$fname}->{health} . " " . 
+            join(" ", $aw_words[ $foes->{$fname}->{aware} ], $distance_matrix->{$who}->{$fname});    
     }
     print "\n";
 }
@@ -437,9 +460,10 @@ sub attack_enemy
 sub fly_closer
 {
     my $fname = shift;
-    if( ! exists $foes->{$fname} ){ say "$fname doesn't exists"; return 0 }; 
-    if( ! $foes->{$fname}->{active} ){ say "$fname is not active"; return 0 };
-    if( $distance_matrix->{$playing}->{$fname} eq 'close' ) { say "$fname already close"; return 0 };
+    if( ! exists $foes->{$fname}                          ) { say "$fname doesn't exists";          return 0 }; 
+    if( ! $foes->{$fname}->{active}                       ) { say "$fname is not active";           return 0 };
+    if( $distance_matrix->{$playing}->{$fname} eq 'close' ) { say "$fname already close";           return 0 };
+    if( my $cl = f_distance($fname, 'close')              ) { say "$cl is already close to $fname"; return 0 }; 
     say "Flying closer to $fname (speed try)";
     my $throw = dice($players->{$playing}->{speed});
     if($throw >= 5)
@@ -630,10 +654,19 @@ sub ia
     }
     if(! $command)
     {
-
-        my %c = ( 'close' => 'away',
-                  'near'  => 'attack',
-                  'far'   => 'pursuit' );
+        my %c;
+        if($foes->{$fname}->{type} eq 'thug')
+        {
+            %c = ( 'close' => 'away',
+                   'near'  => 'attack',
+                   'far'   => 'pursuit' );
+        }
+        elsif($foes->{$fname}->{type} eq 'gunner')
+        {
+            %c = ( 'close' => 'away',
+                   'near'  => 'away',
+                   'far'   => 'attack' );
+        }
         foreach my $distance (qw(close near far))
         {
             my $p = f_distance($fname, $distance);
