@@ -332,7 +332,7 @@ sub setup_enemy
     if($throw >= 5)
     {
         $a = $awareness ? $awareness : 0;
-        $d = $distance ? $distance : 'far';
+        $d = $distance ? $distance : 'far'; #Used only if enemy already aware
     }
     elsif($throw >= 3)
     {
@@ -344,16 +344,16 @@ sub setup_enemy
         $a = $awareness ? $awareness : 1;
         $d = $distance ? $distance : 'near';
     }
-    $foes->{$fname}->{aware} = $a;
+    $foes->{$fname}->{aware} = $a if ! $foes->{$fname}->{aware};
     foreach my $p ( @active_players )
     {
         if($p eq $playing)
         {
-            $distance_matrix->{$p}->{$fname} = $d if $a;
+            $distance_matrix->{$p}->{$fname} = $d if $foes->{$fname}->{aware};
         }
         else
         {
-            if($distance_matrix->{$p}->{$fname} eq 'none')
+            if($distance_matrix->{$p}->{$fname} eq 'none' && $foes->{$fname}->{aware})
             {
                 $distance_matrix->{$p}->{$fname} = 'far';
             }
@@ -445,12 +445,12 @@ sub fly_closer
     if($throw >= 5)
     {
         say "Successfull approach";
-        move($fname, 'closer');
+        move($playing, 'closer', $fname);
     }
     elsif($throw >= 3)
     {
         say "Successfull approach with consequences";
-        move($fname, 'closer');
+        move($playing, 'closer', $fname);
         assign_action_point($fname);
     }
     else
@@ -483,7 +483,7 @@ sub fly_away
         say "Successfully escaped!";
         foreach my $fname ( @targets )
         {
-            move($fname, 'farther');
+            move($playing, 'farther', $fname);
         }
     }
     elsif($throw >= 3)
@@ -497,7 +497,7 @@ sub fly_away
                 my $throw = dice(1);
                 if($throw >= 5)
                 {
-                    move($fname, 'farther');
+                    move($playing, 'farther', $fname);
                 }
                 elsif($throw >= 3)
                 {
@@ -535,12 +535,12 @@ sub disengage
     if($throw >= 5)
     {
         say "Successfully disengaged!";
-        move($fname, 'farther');
+        move($playing, 'farther', $fname);
     }
     elsif($throw >= 3)
     {
         say "Disengaged with consequences";
-        move($fname, 'farther');
+        move($playing, 'farther', $fname);
         assign_action_point($fname);
     }
     else
@@ -634,7 +634,7 @@ sub ia
         my %c = ( 'close' => 'away',
                   'near'  => 'attack',
                   'far'   => 'pursuit' );
-        foreach my $distance (keys %c)
+        foreach my $distance (qw(close near far))
         {
             my $p = f_distance($fname, $distance);
             if($p)
@@ -658,7 +658,7 @@ sub ia
     elsif($command eq 'away')
     {
         say "$fname steps away from $target!";
-        move($fname, 'farther', $target);
+        move($target, 'farther', $fname);
     }
     elsif($command eq 'attack')
     {
@@ -668,7 +668,7 @@ sub ia
     elsif($command eq 'pursuit')
     {
         say "$fname flyes to the $target!";
-        move($fname, 'closer', $target);
+        move($target, 'closer', $fname);
     }
 }
 
@@ -687,21 +687,21 @@ sub harm_player
 
 sub move
 {
-    my $fname = shift;
+    my $player = shift;
     my $direction = shift;
-    my $target = shift;
-    return 0 if $distance_matrix->{$target}->{$fname} eq 'none';
+    my $fname = shift;
+    return 0 if $distance_matrix->{$player}->{$fname} eq 'none';
     if($direction eq 'closer')
     {
-        if($distance_matrix->{$target}->{$fname} eq 'far')
+        if($distance_matrix->{$player}->{$fname} eq 'far')
         {
-            $distance_matrix->{$target}->{$fname} = 'near';  
-            say "$fname is now near to $target";
+            $distance_matrix->{$player}->{$fname} = 'near';  
+            say "$fname is now near to $player";
         }
-        elsif($distance_matrix->{$target}->{$fname} eq 'near')
+        elsif($distance_matrix->{$player}->{$fname} eq 'near')
         {
-            $distance_matrix->{$target}->{$fname} = 'close';  
-            say "$fname is now close to $target";
+            $distance_matrix->{$player}->{$fname} = 'close';  
+            say "$fname is now close to $player";
         }    
         else
         {
@@ -711,15 +711,15 @@ sub move
     }
     elsif($direction eq 'farther')
     {
-        if($distance_matrix->{$target}->{$fname} eq 'near')
+        if($distance_matrix->{$player}->{$fname} eq 'near')
         {
-            $distance_matrix->{$target}->{$fname} = 'far';  
-            say "$fname is now far from $target";
+            $distance_matrix->{$player}->{$fname} = 'far';  
+            say "$fname is now far from $player";
         }
-        elsif($distance_matrix->{$target}->{$fname} eq 'close')
+        elsif($distance_matrix->{$player}->{$fname} eq 'close')
         {
-            $distance_matrix->{$target}->{$fname} = 'near';  
-            say "$fname is now near to $target";
+            $distance_matrix->{$player}->{$fname} = 'near';  
+            say "$fname is now near to $player";
         }    
         else
         {
