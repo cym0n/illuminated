@@ -4,28 +4,49 @@ use v5.10;
 use Moo;
 extends 'Illuminated::Tile';
 
+has interface_options => (
+    is => 'ro',
+    default => sub { ['N', 'S', 'R'] }
+);
+has foes => (
+    is => 'ro',
+    default => sub { [ [ 'alpha',    'thug'   ],
+                       [ 'beta',     'thug'   ],
+                       [ 'gamma',    'thug'   ],
+                       [ 'epsilon',  'thug'   ],
+                       [ 'delta',    'thug'   ],
+                       [ 'ro',       'gunner' ],
+                       [ 'iota',     'gunner' ],
+                     ] }
+);
+
 sub gate_interface
 {
-    my $answer = undef;
-    my @options =  ( 'N', 'S', 'R' ); 
     say "Entering enemy patrol zone";
     say "[N]o strategy";
     say "[S]tealth passage (mind try)";
     say "[R]ush in (power try)";
     print "Choose: ";
-    $answer = <STDIN>;
-    $answer = uc($answer);
-    chomp $answer;
-    if(grep { $answer =~ /^$_/ } @options)
+}
+
+sub gate_run
+{
+    my $self = shift;
+    my $game = shift;
+    my $player = shift;
+    my $choice = shift;
+    
+    $self->init_foes($game);
+    if($choice eq 'N')
     {
-        return $answer;
-    }
-    else
-    {
-        say "Bad option";
-        return undef;
+        foreach my $f ( @{$self->foes} )
+        {
+            my $fobj = $game->get_foe($f->[0]);
+            $self->setup_foe($game, $player, $fobj, undef, undef);
+        }
     }
 }
+
 
 1;
 
