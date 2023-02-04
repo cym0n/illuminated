@@ -45,6 +45,29 @@ sub gate_run
             $self->setup_foe($game, $player, $fobj, undef, undef);
         }
     }
+    elsif($choice eq 'S')
+    {
+        my $throw = $game->dice($player->mind);
+        if($throw >= 5)
+        {
+            say "PASSED UNDETECTED!";
+        }
+        elsif($throw >= 3)
+        {
+            say "Same result of no strategy";
+            $self->gate_run($game, $player, 'N');
+        }
+        else
+        {
+            say "All enemies aware! A turn to the enemy!";
+            foreach my $f ( @{$self->foes} )
+            {
+                my $fobj = $game->get_foe($f->[0]);
+                $self->setup_foe($game, $player, $fobj, undef, 1);
+            }
+        }
+    }
+
 }
 
 
