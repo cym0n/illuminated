@@ -5,7 +5,7 @@ use Moo;
 extends 'Illuminated::Tile';
 
 has interface_options => (
-    is => 'ro',
+    is => 'rw',
     default => sub { ['N', 'S', 'R'] }
 );
 has foes => (
@@ -22,10 +22,16 @@ has foes => (
 
 sub gate_interface
 {
+    my $self = shift;
+    my $game = shift;
+    if($game->aware_foe)
+    {
+        @{$self->interface_options} = grep {$_ ne 'S'} @{$self->interface_options};
+    }
     say "Entering enemy patrol zone";
-    say "[N]o strategy";
-    say "[S]tealth passage (mind try)";
-    say "[R]ush in (power try)";
+    say "[N]o strategy" if grep {$_ eq 'N'} @{$self->interface_options};
+    say "[S]tealth passage (mind try)" if grep {$_ eq 'S'} @{$self->interface_options};
+    say "[R]ush in (power try)" if grep {$_ eq 'R'} @{$self->interface_options};
     print "Choose: ";
 }
 
@@ -36,7 +42,6 @@ sub gate_run
     my $player = shift;
     my $choice = shift;
     
-    $self->init_foes($game);
     if($choice eq 'N')
     {
         foreach my $f ( @{$self->foes} )
@@ -44,6 +49,7 @@ sub gate_run
             my $fobj = $game->get_foe($f->[0]);
             $self->setup_foe($game, $player, $fobj, undef, undef);
         }
+        return 1;
     }
     elsif($choice eq 'S')
     {
@@ -66,6 +72,7 @@ sub gate_run
                 $self->setup_foe($game, $player, $fobj, undef, 1);
             }
         }
+        return 1;
     }
     elsif($choice eq 'R')
     {
@@ -103,6 +110,7 @@ sub gate_run
                 $self->setup_foe($game, $player, $fobj, undef, 1);
             }
         }
+        return 1;
     }
 
 }

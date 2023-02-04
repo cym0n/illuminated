@@ -26,9 +26,10 @@ sub gate_interface
 sub gate_choice
 {
     my $self = shift;
+    my $game = shift;
     my $answer = undef;
     my @options =  @{$self->interface_options};
-    $self->gate_interface();
+    $self->gate_interface($game);
     $answer = <STDIN>;
     $answer = uc($answer);
     chomp $answer;

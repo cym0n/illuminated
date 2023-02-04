@@ -76,12 +76,24 @@ sub init
     { 
         if(! $self->current_tile->running)
         {
-            while(! $answer)
+            $self->current_tile->init_foes($self);
+            my $i = 0;
+            while($self->players->[$i])
             {
-                $answer = $self->current_tile->gate_choice()
+                my $p = $self->players->[$i];
+                say "ACTIVE PLAYER: " . $p->name;
+                while(! $answer)
+                {
+                    $answer = $self->current_tile->gate_choice($self)
+                }
+                my $res = $self->current_tile->gate_run($self, $p, $answer);
+                if($res)
+                {
+                    $i++;
+                }
+                $answer = undef; #All the loop starts again if gate_run fails to put the tile in running mode
             }
-            $self->current_tile->gate_run($self, $self->get_player('Paladin'), $answer);
-            $answer = undef; #All the loop starts again if gate_run fails to put the tile in running mode
+            $self->current_tile->running(1);
         }
     }
 
@@ -183,6 +195,15 @@ sub kill_foe
     $f->active(0);
     say $f->name . " killed!";
     @{$self->foes} = grep { $_->tag ne $f->tag}  @{$self->foes};
+}
+sub aware_foe
+{
+    my $self = shift;
+    for(@{$self->foes})
+    {
+        return 1 if $_->aware;
+    }
+    return 0;
 }
 
 sub show_armies
