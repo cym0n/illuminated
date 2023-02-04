@@ -67,15 +67,6 @@ sub init
 
     $self->add_player('Paladin', 'Maverick', $player_templates{'Maverick'});
     $self->add_player('Templar', 'Tesla', $player_templates{'Tesla'});
-    #$self->add_foe('Alpha', 'Thug');
-    #$self->add_foe('Beta', 'Thug');
-    #$self->add_foe('Gamma', 'Thug');
-    #$self->add_foe('Epsilon', 'Thug');
-    #$self->add_foe('Delta', 'Thug');
-    #$self->add_foe('Ro', 'Thug');
-    #$self->add_foe('Iota', 'Thug');
-
-    #$self->show_armies;
 
     $self->current_tile(Illuminated::Tile::GuardedSpace->new());
 
@@ -148,10 +139,17 @@ sub get_foe
 {
     my $self = shift;
     my $name = shift;
-    my $tag = 'F-' . lc($name);
-    for(@{$self->foes})
+    if($name)
     {
-        return $_ if $_->tag eq $tag;
+        my $tag = 'F-' . lc($name);
+        for(@{$self->foes})
+        {
+            return $_ if $_->tag eq $tag;
+        }
+    }
+    else
+    {   
+       return $self->foes->[rand @{$self->foes}]; 
     }
     return undef;
 }
@@ -176,7 +174,15 @@ sub set_foe_far_from_all
             $self->distance_matrix->{$_->tag}->{$f->tag} = 'far'
         }
     }
-    
+}
+sub kill_foe
+{
+    my $self = shift;
+    my $f = shift;
+    $f->health(0);
+    $f->active(0);
+    say $f->name . " killed!";
+    @{$self->foes} = grep { $_->tag ne $f->tag}  @{$self->foes};
 }
 
 sub show_armies

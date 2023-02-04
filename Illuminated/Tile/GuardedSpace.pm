@@ -59,7 +59,44 @@ sub gate_run
         }
         else
         {
-            say "All enemies aware! A turn to the enemy!";
+            say "All enemies aware!"; #TODO: A turn to the enemy
+            foreach my $f ( @{$self->foes} )
+            {
+                my $fobj = $game->get_foe($f->[0]);
+                $self->setup_foe($game, $player, $fobj, undef, 1);
+            }
+        }
+    }
+    elsif($choice eq 'R')
+    {
+        my $throw = $game->dice($player->power);
+        $throw = 3;
+        if($throw >= 3)
+        {
+            if($throw >= 5)
+            {
+                say "Enemy killed by surprise! Close to a second enemy. All enemies aware!";
+                my $f = $game->get_foe(undef);
+                $game->kill_foe($f);
+            }
+            else
+            {
+                say "Close to an enemy! All enemies aware!";
+            }
+            my $f2 = $game->get_foe(undef);
+            $self->setup_foe($game, $player, $f2, 'close', 1);
+            foreach my $f3 ( @{$self->foes} )
+            {
+                my $fobj = $game->get_foe($f3->[0]);
+                if($fobj && $fobj->tag ne $f2->tag)
+                {
+                    $self->setup_foe($game, $player, $fobj, undef, 1);
+                }
+            }
+        }
+        else
+        {
+            say "All enemies aware!";
             foreach my $f ( @{$self->foes} )
             {
                 my $fobj = $game->get_foe($f->[0]);
