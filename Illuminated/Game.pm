@@ -150,15 +150,20 @@ sub init
                     $res = $self->disengage();
                 }
                 $answer = undef;
-                if($res)
+                $fighting = $self->end_condition(); 
+                if($res && $fighting)
                 {
                     $self->foes_turn();
+                    $fighting = $self->end_condition(); 
                     $i++;
                 }
             }
-            $self->assign_action_point();
-            $self->foes_turn();
-            
+            if($fighting)
+            {
+                $self->assign_action_point();
+                $self->foes_turn();
+                $fighting = $self->end_condition(); 
+            }
         }
     }
 }
@@ -508,6 +513,22 @@ sub foes_turn
             }
         }
     }
+}
+
+sub end_condition
+{
+    my $self = shift;
+    if(! @{$self->foes})
+    {
+        say "VICTORY! All foes defeated";
+        return 0;
+    }
+    if(! @{$self->players})
+    {
+        say "DEFEAT! Players destroyed";
+        return 0;
+    }    
+    return 1;
 }
 
 ### Combat commands
