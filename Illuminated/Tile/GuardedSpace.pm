@@ -13,9 +13,9 @@ has interface_header => (
 has interface_options => (
     is => 'rw',
     default => sub {  [ 
-        ['N', "[N]o strategy"], 
-        ['S', "[S]tealth passage (mind try)"], 
-        ['R', "[R]ush in (power try)"] 
+        ['(N)', "[N]o strategy"], 
+        ['(S)', "[S]tealth passage (mind try)"], 
+        ['(R)', "[R]ush in (power try)"] 
     ] }
 );
 has foes => (

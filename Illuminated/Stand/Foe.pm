@@ -21,4 +21,17 @@ has action_points => (
     default => 0,
 );
 
+sub aware_text
+{
+    my $self = shift;
+    if($self->aware)
+    {
+        return 'aware';
+    }
+    else
+    {
+        return 'unaware';
+    }
+}
+
 1;

@@ -44,15 +44,16 @@ sub choice
     $answer = <STDIN>;
     $answer = uc($answer);
     chomp $answer;
-    if(grep { my $reg = $_->[0]; $answer =~ /^$reg$/ } @{$self->interface_options})
+    for(@{$self->interface_options})
     {
-        return $answer;
+        my $reg = $_->[0]; 
+        if($answer =~ /^$reg$/)
+        {
+            return ($1, $3);
+        }
     }
-    else
-    {
-        say "Bad option";
-        return undef;
-    }
+    say "Bad option";
+    return undef;
 }
 
 
