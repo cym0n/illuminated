@@ -6,7 +6,11 @@ extends 'Illuminated::Tile';
 
 has interface_options => (
     is => 'rw',
-    default => sub { ['N', 'S', 'R'] }
+    default => sub {  [ 
+        ['N', "[N]o strategy"], 
+        ['S', "[S]tealth passage (mind try)"], 
+        ['R', "[R]ush in (power try)"] 
+    ] }
 );
 has foes => (
     is => 'ro',
@@ -26,12 +30,10 @@ sub gate_interface
     my $game = shift;
     if($game->aware_foe)
     {
-        @{$self->interface_options} = grep {$_ ne 'S'} @{$self->interface_options};
+        @{$self->interface_options} = grep {$_->[0] ne 'S'} @{$self->interface_options};
     }
     say "Entering enemy patrol zone";
-    say "[N]o strategy" if grep {$_ eq 'N'} @{$self->interface_options};
-    say "[S]tealth passage (mind try)" if grep {$_ eq 'S'} @{$self->interface_options};
-    say "[R]ush in (power try)" if grep {$_ eq 'R'} @{$self->interface_options};
+    $self->print_options();
     print "Choose: ";
 }
 

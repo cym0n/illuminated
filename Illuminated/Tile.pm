@@ -23,17 +23,26 @@ sub gate_interface
 {
     say "No interface provided for this tile"
 }
+sub print_options
+{
+    my $self = shift;
+    for(@{$self->interface_options})
+    {
+        say $_->[1];
+    }
+}
+
+
 sub gate_choice
 {
     my $self = shift;
     my $game = shift;
     my $answer = undef;
-    my @options =  @{$self->interface_options};
     $self->gate_interface($game);
     $answer = <STDIN>;
     $answer = uc($answer);
     chomp $answer;
-    if(grep { $answer =~ /^$_/ } @options)
+    if(grep { my $reg = $_->[0]; $answer =~ /^$reg$/ } @{$self->interface_options})
     {
         return $answer;
     }
