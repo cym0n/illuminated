@@ -140,6 +140,10 @@ sub init
                 {
                     $self->fly_away($arg);
                 }
+                elsif($answer eq 'A')
+                {
+                    $self->attack_foe($arg);
+                }
                 $answer = undef;
             }
         }
@@ -294,11 +298,36 @@ sub someone_near
 {
     my $self = shift;
     my $player = shift;
+    return $self->_someone_distance($player, 'near')
+}
+sub someone_close
+{
+    my $self = shift;
+    my $player = shift;
+    return $self->_someone_distance($player, 'close')
+}
+sub _someone_distance
+{
+    my $self = shift;
+    my $player = shift;
+    my $distance = shift;
     foreach(@{$self->foes})
     {
-        if($self->get_distance($player, $_) eq 'near') { return $_ };
+        if($self->get_distance($player, $_) eq $distance) { return $_ };
     }
     return undef;
+}
+sub harm_foe
+{
+    my $self = shift;
+    my $foe = shift;
+    my $damage = shift;
+    $foe->health($foe->health - $damage);
+    say $foe->name . " gets $damage damages";
+    if($foe->health <= 0)
+    {
+        $self->kill_foe($foe);
+    }
 }
 
 
@@ -311,6 +340,11 @@ sub kill_foe
     say $f->name . " killed!";
     @{$self->foes} = grep { $_->tag ne $f->tag}  @{$self->foes};
 }
+
+
+
+
+
 sub aware_foe
 {
     my $self = shift;
@@ -484,6 +518,59 @@ sub fly_away
                 #TODO: Consequences
             }
         }
+    }
+    return 1;
+}
+
+sub attack_foe
+{
+    my $self = shift;
+    my $foe = undef;
+    my $combat_type = undef;
+    $foe = $self->someone_close($self->active_player);
+    if(! $foe)
+    {
+        my $fname = shift;
+        $foe = $self->get_foe($fname);
+        if(! $foe) { say "$fname doesn't exists or is not active"; return 0 }
+        if($self->get_distance($self->active_player, $foe) ne 'near') { say "$fname too far"; return 0 }
+        $combat_type = 'ranged';
+    }
+    else
+    {
+        $combat_type = 'close';
+    }
+    
+    my $try;
+    my $damage;
+    if( $combat_type eq 'ranged' )
+    {
+        say "Attacking " . $foe->name . " with gun (mind try)";
+        $try = $self->active_player->mind;
+        $damage = 1;
+    }
+    elsif( $combat_type eq 'close')
+    {
+        say "Attacking " . $foe->name . " with sword (power try)";
+        $try = $self->active_player->power;
+        $damage = 2;
+    }
+    my $throw = $self->dice($try);
+    if($throw >= 5)
+    {
+        say "Successful attack!";
+        $self->harm_foe($foe, $damage);
+    }
+    elsif($throw >= 3)
+    {
+        say "Successful attack with consequences!";
+        $self->harm_foe($foe, $damage);
+        #TODO: Consequences
+    }
+    else
+    {
+        say "Attack failed!";
+        #TODO: Consequences
     }
     return 1;
 }
