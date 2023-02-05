@@ -13,7 +13,8 @@ has health => (
     is => 'rw'
 );
 has active => (
-    is => 'rw'
+    is => 'rw',
+    default => 1
 );
 has tag => (
     is => 'lazy'

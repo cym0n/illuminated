@@ -152,9 +152,13 @@ sub init
                 $answer = undef;
                 if($res)
                 {
+                    $self->foes_turn();
                     $i++;
                 }
             }
+            $self->assign_action_point();
+            $self->foes_turn();
+            
         }
     }
 }
@@ -317,6 +321,19 @@ sub move
     }
 }
 
+sub foe_distance
+{
+    my $self = shift;
+    my $foe = shift;
+    my $distance = shift;
+    my @pls = ();
+    foreach(@{$self->players})
+    {
+        if($self->get_distance($_, $foe) eq $distance) { push @pls, $_; };
+    }
+    return @pls;
+}
+
 sub close_to
 {
     my $self = shift;
@@ -363,6 +380,20 @@ sub harm_foe
     }
 }
 
+sub harm_player
+{
+    my $self = shift;
+    my $target = shift;
+    my $damage = shift;
+    $target->health($target->health - 1);
+    say $target->name . " receives $damage damages. " . $target->name . "'s health is now " . $target->health;
+    if($target->health <= 0)
+    {
+        say $target->name . " killed!";
+        @{$self->players} = grep { $_->tag ne $target->tag } @{$self->players};
+    }
+}
+
 
 sub kill_foe
 {
@@ -374,10 +405,6 @@ sub kill_foe
     @{$self->foes} = grep { $_->tag ne $f->tag}  @{$self->foes};
 }
 
-
-
-
-
 sub aware_foe
 {
     my $self = shift;
@@ -388,20 +415,15 @@ sub aware_foe
     return 0;
 }
 
-sub show_armies
+sub unaware_foe
 {
     my $self = shift;
-    say "Players:";
-    for(@{$self->players})
-    {
-        say "   " . $_->name;
-    }
-    print "\n";
-    say "Foes:";
+    my @unw = ();
     for(@{$self->foes})
     {
-        say "   " . $_->name;
+        push @unw, $_ if ! $_->aware;
     }
+    return @unw;
 }
 
 sub dice
@@ -423,6 +445,72 @@ sub dice
     say join (" ", @throws) . " => " . $result if ! $silent;
     return $result;
 }
+
+sub execute_foe
+{
+    my $self = shift;
+    my $foe = shift;
+    my $command = shift;
+    my $target = shift;
+
+    if($command eq 'warn')
+    {
+        my @unw = $self->unaware_foe();
+        my $f = $unw[rand @unw];
+        say $foe->name . " reaches " . $f->name . " and makes him aware!";
+        $f->aware(1);
+        $self->set_foe_far_from_all($f);
+    }
+    elsif($command eq 'away')
+    {
+        say $foe->name . " steps away from " . $target->name . "!";
+        $self->move($target, $foe, 'farther');
+    }
+    elsif($command eq 'attack')
+    {
+        say $foe->name . " deals 1 damage to " . $target->name . "!";
+        $self->harm_player($target, 1);
+    }
+    elsif($command eq 'pursuit')
+    {
+        say $foe->name . " flyes to the " . $target->name . "!";
+        $self->move($target, $foe, 'closer');
+    }
+}
+
+sub assign_action_point
+{
+    my $self = shift;
+    my $foe = shift;
+    if(! $foe || ! $foe->active)
+    {
+        $foe = $self->foes->[rand @{$self->foes}];
+    }
+    $foe->action_points($foe->action_points + 1);
+    say "Action point given to: " . $foe->name;
+}
+
+sub foes_turn
+{
+    my $self = shift;
+    my $done = 1;
+
+    while($done)
+    {
+        $done = 0;
+        foreach my $f (@{$self->foes})
+        {
+            if($f->action_points > 0)
+            {
+                $done = 1;
+                $f->action_points($f->action_points -1);
+                $f->ia($self);
+            }
+        }
+    }
+}
+
+### Combat commands
 
 sub situation
 {
@@ -474,13 +562,13 @@ sub fly_closer
     {
         say "Successfull approach with consequences";
         $self->move($self->active_player, $foe, 'closer');
-        say $foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name; 
-        #TODO: Consequences!
+        say $foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name;
+        $self->assign_action_point($foe);
     }
     else
     {
         say "Failed to approach!";
-        #TODO: Consequences!
+        $self->assign_action_point($foe);
     }
     return 1;
 }
@@ -535,7 +623,7 @@ sub fly_away
                 else
                 {
                     say $f->name . " still $d for " . $self->active_player->name . " with consequences";
-                    #TODO: Consequences
+                    $self->assign_action_point($f);
                 }
             }
         }
@@ -548,7 +636,7 @@ sub fly_away
             my $d = $self->get_distance($self->active_player, $f);
             if($d ne 'far' && $d ne 'none')
             {
-                #TODO: Consequences
+                $self->assign_action_point($f);
             }
         }
     }
@@ -598,12 +686,12 @@ sub attack_foe
     {
         say "Successful attack with consequences!";
         $self->harm_foe($foe, $damage);
-        #TODO: Consequences
+        $self->assign_action_point($foe);
     }
     else
     {
         say "Attack failed!";
-        #TODO: Consequences
+        $self->assign_action_point($foe);
     }
     return 1;
 }
@@ -624,12 +712,12 @@ sub disengage
     {
         say "Disengaged with consequences";
         $self->move($self->active_player, $foe, 'farther');
-        #TODO: Consequences
+        $self->assign_action_point($foe);
     }
     else
     {
         say "Disengaging failed!";
-        #TODO: Consequences
+        $self->assign_action_point($foe);
     }
     return 1;
 }
