@@ -6,6 +6,7 @@ use Illuminated::Stand::Player;
 use Illuminated::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
 
+
 has players => (
     is => 'ro',
     default => sub { [ ] }
@@ -35,6 +36,26 @@ has distance_matrix => (
     is => 'ro',
     default => sub { {} }
 );
+
+has interface_header => (
+    is => 'rw',
+    default => "Combat zone"
+);
+has interface_options => (
+    is => 'rw',
+    default => sub {  [ 
+        ['^(S)( (.*))?$', "[S]ituation"], 
+        ['^(A)( (.*))$',  "[A]ttack enemy (mind try)"], 
+        ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"], 
+        ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"], 
+    ] }
+);
+has active_player => (
+    is => 'rw',
+    default => undef,
+);
+
+with 'Illuminated::Role::Interactive';
 
 sub init
 {
@@ -72,6 +93,7 @@ sub init
 
     my $fighting = 1;
     my $answer;
+    my $arg;
     while($fighting)
     { 
         if(! $self->current_tile->running)
@@ -80,13 +102,13 @@ sub init
             my $i = 0;
             while($self->players->[$i])
             {
-                my $p = $self->players->[$i];
-                say "\nACTIVE PLAYER: " . $p->name;
+                $self->active_player($self->players->[$i]);
+                say "\nACTIVE PLAYER: " . $self->active_player->name;
                 while(! $answer)
                 {
-                    $answer = $self->current_tile->choice($self)
+                    ($answer, $arg) = $self->current_tile->choice($self)
                 }
-                my $res = $self->current_tile->gate_run($self, $p, $answer);
+                my $res = $self->current_tile->gate_run($self, $self->active_player, $answer);
                 if($res)
                 {
                     $i++;
@@ -94,6 +116,28 @@ sub init
                 $answer = undef; 
             }
             $self->current_tile->running(1);
+        }
+        else
+        {
+            my $i = 0;
+            while($self->players->[$i])
+            {
+                $self->active_player($self->players->[$i]);
+                say "\nACTIVE PLAYER: " . $self->active_player->name;
+                while(! $answer)
+                {
+                    ($answer, $arg) = $self->choice($self)
+                }
+                if($answer eq 'S')
+                {
+                    $self->situation($arg);
+                }
+                elsif($answer eq 'C')
+                {
+                    $self->fly_closer($arg);
+                }
+                $answer = undef;
+            }
         }
     }
 
@@ -144,7 +188,7 @@ sub add_foe
     push @{$self->foes}, $f;
     foreach(@{$self->players})
     {
-        $self->distance_matrix->{$_->tag}->{$f->tag} = 'none'
+        $self->set_distance($_, $f, 'none');
     }
 }
 sub get_foe
@@ -173,7 +217,7 @@ sub set_foe_distance
     my $distance = shift;
     my $pobj = $self->get_player($player);
     my $fobj = $self->get_foe($foe);
-    $self->distance_matrix->{$pobj->tag}->{$fobj->tag} = $distance;
+    $self->set_distance($pobj, $fobj, $distance);
 }
 sub set_foe_far_from_all
 {
@@ -181,12 +225,68 @@ sub set_foe_far_from_all
     my $f = shift;
     foreach(@{$self->players})
     {
-        if($self->distance_matrix->{$_->tag}->{$f->tag} eq 'none')
+        if($self->get_distance($_, $f) eq 'none')
         {
-            $self->distance_matrix->{$_->tag}->{$f->tag} = 'far'
+            $self->set_distance($_, $f, 'far')
         }
     }
 }
+sub set_distance
+{
+    my $self = shift;
+    my $player = shift;
+    my $foe = shift;
+    my $distance = shift;
+    $self->distance_matrix->{$player->tag}->{$foe->tag} = $distance
+}
+sub get_distance
+{
+    my $self = shift;
+    my $player = shift;
+    my $foe = shift;
+    return $self->distance_matrix->{$player->tag}->{$foe->tag}
+}
+sub move
+{
+    my $self = shift;
+    my $player = shift;
+    my $foe = shift;
+    my $direction = shift;
+    if($direction eq 'farther')
+    {
+        if($self->get_distance($player, $foe) eq 'close')
+        {
+            $self->set_distance($player, $foe, 'near');
+        }
+        elsif($self->get_distance($player, $foe) eq 'near')
+        {
+            $self->set_distance($player, $foe, 'far');
+        }
+    }
+    elsif($direction eq 'closer')
+    {
+        if($self->get_distance($player, $foe) eq 'near')
+        {
+            $self->set_distance($player, $foe, 'close');
+        }
+        elsif($self->get_distance($player, $foe) eq 'far')
+        {
+            $self->set_distance($player, $foe, 'near');
+        }
+    }
+}
+
+sub close_to
+{
+    my $self = shift;
+    my $foe = shift;
+    foreach(@{$self->players})
+    {
+        if($self->get_distance($_, $foe) eq 'close') { return $_ };
+    }
+    return undef;
+}
+
 sub kill_foe
 {
     my $self = shift;
@@ -240,6 +340,67 @@ sub dice
     }
     say join (" ", @throws) . " => " . $result if ! $silent;
     return $result;
+}
+
+sub situation
+{
+    my $self = shift;
+    my $who = shift;
+    my $p;
+    if($who)
+    {
+        $p = $self->get_player($who);
+        if(! $p)
+        {
+            say "Wrong player";
+            return 0;
+        }
+    }
+    else
+    {
+        $p = $self->active_player;
+    }
+    print "\n";
+    say $p->name . ": HEALTH " . $p->health;
+    print "\n";
+    foreach my $f (@{$self->foes})
+    {
+        say $f->name . " (" .  $f->type . "): HEALTH " . $f->health . " " . 
+            join(" ", $f->aware_text, $self->get_distance($p, $f)); 
+    }
+    print "\n";
+    return 0;
+}
+
+sub fly_closer
+{
+    my $self = shift;
+    my $fname = shift;
+    my $foe = $self->get_foe($fname);
+    if(! $foe) { say "$fname doesn't exists or is inactive"; return 0 }
+    if(! $foe->aware) { say "$fname " . $foe->aware_text; return 0 }
+    if(my $cl = $self->close_to($foe)) { say "$fname already close to " . $cl->name; return 0}
+    say "Flying closer to $fname (speed try)";
+    my $throw = $self->dice($self->active_player->speed);
+    if($throw >= 5)
+    {
+        say "Successfull approach";
+        $self->move($self->active_player, $foe, 'closer');
+        say $foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name; 
+    }
+    elsif($throw >= 3)
+    {
+        say "Successfull approach with consequences";
+        $self->move($self->active_player, $foe, 'closer');
+        say $foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name; 
+        #TODO: Consequences!
+    }
+    else
+    {
+        say "Failed to approach!";
+        #TODO: Consequences!
+    }
+    return 1;
 }
 
 1;
