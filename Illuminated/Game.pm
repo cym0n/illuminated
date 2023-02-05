@@ -124,31 +124,64 @@ sub init
             {
                 $self->active_player($self->players->[$i]);
                 say "\nACTIVE PLAYER: " . $self->active_player->name;
+                my $res = 0;
                 while(! $answer)
                 {
                     ($answer, $arg) = $self->choice($self)
                 }
                 if($answer eq 'S')
                 {
-                    $self->situation($arg);
+                    $res = $self->situation($arg);
                 }
                 elsif($answer eq 'C')
                 {
-                    $self->fly_closer($arg);
+                    $res = $self->fly_closer($arg);
                 }
                 elsif($answer eq 'F')
                 {
-                    $self->fly_away($arg);
+                    $res = $self->fly_away($arg);
                 }
                 elsif($answer eq 'A')
                 {
-                    $self->attack_foe($arg);
+                    $res = $self->attack_foe($arg);
+                }
+                elsif($answer eq 'D')
+                {
+                    $res = $self->disengage();
                 }
                 $answer = undef;
+                if($res)
+                {
+                    $i++;
+                }
             }
         }
     }
+}
 
+sub interface_preconditions
+{
+    my $self = shift;
+    my $game = shift;
+    if($game->someone_close($game->active_player))
+    {
+        $self->interface_header("Combat zone - close combat");
+        $self->interface_options([ 
+            ['^(S)( (.*))?$', "[S]ituation"], 
+            ['^(A)( (.*))?$', "[A]ttack enemy (mind try)"], 
+            ['^(D)$', "[D]isengage (power try)"], 
+            ]);
+    }
+    else
+    {
+        $self->interface_header("Combat zone");
+        $self->interface_options([ 
+            ['^(S)( (.*))?$', "[S]ituation"], 
+            ['^(A)( (.*))$',  "[A]ttack enemy (mind try)"], 
+            ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"], 
+            ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"], 
+            ]);
+    }
 }
 
 sub add_player
@@ -570,6 +603,32 @@ sub attack_foe
     else
     {
         say "Attack failed!";
+        #TODO: Consequences
+    }
+    return 1;
+}
+
+sub disengage
+{
+    my $self = shift;
+    my $foe = $self->someone_close($self->active_player);
+    if(! $foe) { say "Nobody close to " . $self->active_player->name; return 0 };
+    say "Disengaging from " . $foe->name . " (power try)";
+    my $throw = $self->dice($self->active_player->power);
+    if($throw >= 5)
+    {
+        say "Successfully disengaged!";
+        $self->move($self->active_player, $foe, 'farther');
+    }
+    elsif($throw >= 3)
+    {
+        say "Disengaged with consequences";
+        $self->move($self->active_player, $foe, 'farther');
+        #TODO: Consequences
+    }
+    else
+    {
+        say "Disengaging failed!";
         #TODO: Consequences
     }
     return 1;
