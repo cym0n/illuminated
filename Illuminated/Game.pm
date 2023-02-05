@@ -81,17 +81,17 @@ sub init
             while($self->players->[$i])
             {
                 my $p = $self->players->[$i];
-                say "ACTIVE PLAYER: " . $p->name;
+                say "\nACTIVE PLAYER: " . $p->name;
                 while(! $answer)
                 {
-                    $answer = $self->current_tile->gate_choice($self)
+                    $answer = $self->current_tile->choice($self)
                 }
                 my $res = $self->current_tile->gate_run($self, $p, $answer);
                 if($res)
                 {
                     $i++;
                 }
-                $answer = undef; #All the loop starts again if gate_run fails to put the tile in running mode
+                $answer = undef; 
             }
             $self->current_tile->running(1);
         }

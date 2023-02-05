@@ -3,13 +3,12 @@ package Illuminated::Tile;
 use v5.10;
 use Moo;
 
+with 'Illuminated::Role::Interactive';
+
 has name => (
     is => 'ro'
 );
-has interface_options => (
-    is => 'ro',
-    default => sub { [] }
-);
+
 has running => (
     is => 'rw',
     default => 0,
@@ -19,44 +18,11 @@ has foes => (
     default => sub { [] }
 );
 
-sub gate_interface
-{
-    say "No interface provided for this tile"
-}
-sub print_options
-{
-    my $self = shift;
-    for(@{$self->interface_options})
-    {
-        say $_->[1];
-    }
-}
 
-
-sub gate_choice
-{
-    my $self = shift;
-    my $game = shift;
-    my $answer = undef;
-    $self->gate_interface($game);
-    $answer = <STDIN>;
-    $answer = uc($answer);
-    chomp $answer;
-    if(grep { my $reg = $_->[0]; $answer =~ /^$reg$/ } @{$self->interface_options})
-    {
-        return $answer;
-    }
-    else
-    {
-        say "Bad option";
-        return undef;
-    }
-}
 sub gate_run
 {
     say "Nothing to do";
 }
-
 sub init_foes
 {
     my $self = shift;
@@ -66,8 +32,6 @@ sub init_foes
         $game->add_foe($f->[0], $f->[1])
     }
 }
-
-
 sub setup_foe
 {
     my $self = shift;

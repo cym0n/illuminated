@@ -4,6 +4,12 @@ use v5.10;
 use Moo;
 extends 'Illuminated::Tile';
 
+
+has interface_header => (
+    is => 'rw',
+    default => "Entering enemy patrol zone"
+);
+
 has interface_options => (
     is => 'rw',
     default => sub {  [ 
@@ -24,17 +30,15 @@ has foes => (
                      ] }
 );
 
-sub gate_interface
+sub interface_preconditions
 {
     my $self = shift;
     my $game = shift;
     if($game->aware_foe)
     {
         @{$self->interface_options} = grep {$_->[0] ne 'S'} @{$self->interface_options};
+        $self->interface_header("Entering enemy patrol zone (enemies already aware)");
     }
-    say "Entering enemy patrol zone";
-    $self->print_options();
-    print "Choose: ";
 }
 
 sub gate_run
