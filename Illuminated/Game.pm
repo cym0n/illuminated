@@ -136,6 +136,10 @@ sub init
                 {
                     $self->fly_closer($arg);
                 }
+                elsif($answer eq 'F')
+                {
+                    $self->fly_away($arg);
+                }
                 $answer = undef;
             }
         }
@@ -286,6 +290,17 @@ sub close_to
     }
     return undef;
 }
+sub someone_near
+{
+    my $self = shift;
+    my $player = shift;
+    foreach(@{$self->foes})
+    {
+        if($self->get_distance($player, $_) eq 'near') { return $_ };
+    }
+    return undef;
+}
+
 
 sub kill_foe
 {
@@ -402,5 +417,76 @@ sub fly_closer
     }
     return 1;
 }
+
+sub fly_away
+{
+    my $self = shift;
+    my $who = shift;
+    my @targets;
+    if(lc($who) eq '_all')
+    {
+        if(! $self->someone_near($self->active_player)) { say "Nobody is near"; return 0 }
+        say "Flying away from all enemies (speed try)";
+        @targets = ( @{$self->foes} );
+    }
+    else
+    {
+        my $f = $self->get_foe($who);
+        if(! $f) { say "$who doesn't exists or is not active"; return 0 }
+        if($self->get_distance($self->active_player, $f) ne 'near') { say "$who is not near"; return 0 }
+        say "Flying away from $who (speed try)";
+        @targets = ( $f );
+    }
+    my $throw = $self->dice($self->active_player->speed);
+    if($throw >= 5)
+    {
+        say "Successfully escaped!";
+        foreach my $f ( @targets )
+        {
+            $self->move($self->active_player, $f, 'farther');
+            say $f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name; 
+        }
+    }
+    elsif($throw >= 3)
+    {
+        say "Uncomplete escape! Rolling enemies one by one";
+        foreach my $f ( @targets )
+        {
+            my $d = $self->get_distance($self->active_player, $f);
+            if($d ne 'far' && $d ne 'none')
+            { 
+                my $throw = $self->dice(1);
+                if($throw >= 5)
+                {
+                    $self->move($self->active_player, $f, 'farther');
+                    say $f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name; 
+                }
+                elsif($throw >= 3)
+                {
+                    say $f->name . " still $d for " . $self->active_player->name
+                }
+                else
+                {
+                    say $f->name . " still $d for " . $self->active_player->name . " with consequences";
+                    #TODO: Consequences
+                }
+            }
+        }
+    }
+    else
+    {
+        say "Failed to escape!";
+        foreach my $f ( @targets )
+        {
+            my $d = $self->get_distance($self->active_player, $f);
+            if($d ne 'far' && $d ne 'none')
+            {
+                #TODO: Consequences
+            }
+        }
+    }
+    return 1;
+}
+
 
 1;
