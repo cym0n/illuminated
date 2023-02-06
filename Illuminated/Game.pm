@@ -2,6 +2,7 @@ package Illuminated::Game;
 
 use v5.10;
 use Moo;
+use Illuminated::Weapon;
 use Illuminated::Stand::Player;
 use Illuminated::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
@@ -50,6 +51,10 @@ has interface_options => (
         ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"], 
     ] }
 );
+has interface_weapons => (
+    is => 'rw',
+    default => sub { {} }
+);
 has active_player => (
     is => 'rw',
     default => undef,
@@ -86,8 +91,31 @@ sub init
         }
     );
 
-    $self->add_player('Paladin', 'Maverick', $player_templates{'Maverick'});
-    $self->add_player('Templar', 'Tesla', $player_templates{'Tesla'});
+    my %weapons = (
+        'balthazar' => {
+            name => 'balthazar',
+            type => 'rifle',
+            try_type => 'mind',
+            range => [ 'near' ],
+            damage => 1
+        },
+        'caliban' => {
+            name => 'caliban',
+            type => 'sword',
+            try_type => 'power',
+            range => [ 'close' ],
+            damage => 2
+        }
+    );
+
+
+    my $player;
+    $player = $self->add_player('Paladin', 'Maverick', $player_templates{'Maverick'});
+    $player->add_weapon(Illuminated::Weapon->new($weapons{'balthazar'}));
+    $player->add_weapon(Illuminated::Weapon->new($weapons{'caliban'}));
+    $player = $self->add_player('Templar', 'Tesla', $player_templates{'Tesla'});
+    $player->add_weapon(Illuminated::Weapon->new($weapons{'balthazar'}));
+    $player->add_weapon(Illuminated::Weapon->new($weapons{'caliban'}));
 
     $self->current_tile(Illuminated::Tile::GuardedSpace->new());
 
@@ -141,9 +169,9 @@ sub init
                 {
                     $res = $self->fly_away($arg);
                 }
-                elsif($answer eq 'A')
+                elsif($answer =~ /^A\d+$/)
                 {
-                    $res = $self->attack_foe($arg);
+                    $res = $self->attack_foe($answer, $arg);
                 }
                 elsif($answer eq 'D')
                 {
@@ -172,25 +200,60 @@ sub interface_preconditions
 {
     my $self = shift;
     my $game = shift;
+
+    my @options = (  ['^(S)( (.*))?$', "[S]ituation"] );
+    my @ranges;
     if($game->someone_close($game->active_player))
     {
         $self->interface_header("Combat zone - close combat");
-        $self->interface_options([ 
-            ['^(S)( (.*))?$', "[S]ituation"], 
-            ['^(A)( (.*))?$', "[A]ttack enemy (mind try)"], 
-            ['^(D)$', "[D]isengage (power try)"], 
-            ]);
+        push @options, ['^(D)$', "[D]isengage (power try)"]; 
+        @ranges = qw( close );
     }
     else
     {
         $self->interface_header("Combat zone");
-        $self->interface_options([ 
-            ['^(S)( (.*))?$', "[S]ituation"], 
-            ['^(A)( (.*))$',  "[A]ttack enemy (mind try)"], 
-            ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"], 
-            ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"], 
-            ]);
+        push @options, ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"];
+        push @options, ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"];
+        @ranges = qw( far near );
     }
+    my %already = ();
+    my $i = 1;
+    my %weapons_mapping = ();
+    foreach my $d (@ranges)
+    {
+        if($game->_someone_distance($game->active_player, $d))
+        {
+            my @weaps = $game->active_player->get_weapons_by_range($d);
+            foreach my $w (@weaps)
+            {
+                if(! exists $already{$w->name})
+                {
+                    push @options, ['^(A1)( (.*))?$', "[A" . $i . "]ttack enemy with " . $w->name . " (" . $w->try_type . " try)"];
+                    $weapons_mapping{'A' . $i} = $w->name;
+                    $i++
+                }
+            }
+        }
+    }
+    $game->interface_options(\@options);
+    $game->interface_weapons(\%weapons_mapping);
+    
+#    if($game->someone_close($game->active_player))
+#    {
+#        $self->interface_options([ 
+#            ['^(S)( (.*))?$', "[S]ituation"], 
+#            ['^(A)( (.*))?$', "[A]ttack enemy (mind try)"], 
+#            ]);
+#    }
+#    else
+#    {
+#        $self->interface_options([ 
+#            ['^(S)( (.*))?$', "[S]ituation"], 
+#            ['^(A)( (.*))$',  "[A]ttack enemy (mind try)"], 
+#            ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"], 
+#            ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"], 
+#            ]);
+#    }
 }
 
 sub add_player
@@ -205,6 +268,7 @@ sub add_player
    
     my $pl = Illuminated::Stand::Player->new($template);
     push @{$self->players}, $pl;
+    return $pl;
 }
 
 sub get_player
@@ -667,7 +731,11 @@ sub fly_away
 sub attack_foe
 {
     my $self = shift;
+    my $answer = shift;
     my $foe = undef;
+
+    my $w = $self->active_player->get_weapon($self->interface_weapons->{$answer});
+
     my $combat_type = undef;
     $foe = $self->someone_close($self->active_player);
     if(! $foe)
@@ -675,29 +743,18 @@ sub attack_foe
         my $fname = shift;
         $foe = $self->get_foe($fname);
         if(! $foe) { say "$fname doesn't exists or is not active"; return 0 }
-        if($self->get_distance($self->active_player, $foe) ne 'near') { say "$fname too far"; return 0 }
         $combat_type = 'ranged';
     }
     else
     {
         $combat_type = 'close';
     }
+    if(! $w->good_for_range($self->get_distance($self->active_player, $foe))) { say "Distance not suitable"; return 0 };
     
-    my $try;
-    my $damage;
-    if( $combat_type eq 'ranged' )
-    {
-        say "Attacking " . $foe->name . " with gun (mind try)";
-        $try = $self->active_player->mind;
-        $damage = 1;
-    }
-    elsif( $combat_type eq 'close')
-    {
-        say "Attacking " . $foe->name . " with sword (power try)";
-        $try = $self->active_player->power;
-        $damage = 2;
-    }
-    my $throw = $self->dice($try);
+    say "Attacking " . $foe->name . " with " . $w->name . " (" . $w->try_type . " try)";
+    my $try = $w->try_type;
+    my $damage = $w->damage;
+    my $throw = $self->dice($self->active_player->$try);
     if($throw >= 5)
     {
         say "Successful attack!";
