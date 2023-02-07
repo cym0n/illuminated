@@ -56,4 +56,15 @@ sub calculate_effects
     }
 }
 
+sub description
+{
+    my $self = shift;
+    my $desc = $self->name . " (" .  $self->type . "): HEALTH " . $self->health . " " . $self->aware_text . " "; 
+    if(@{$self->status})
+    {
+        $desc .=  "[" . join(", ", @{$self->status}) . "]";
+    }
+    return $desc;
+}
+
 1;

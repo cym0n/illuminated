@@ -64,8 +64,13 @@ sub _standard_ia
     foreach my $distance (qw(close near far))
     {
         my @pls = $game->foe_distance($self, $distance);
+        my $debug_pls = "";
+        if(@pls)
+        {
+            for(@pls) { $debug_pls .= " " . $_->name; };
+        }
         @pls = grep {
-            $distance eq 'near' && $c->{$distance} eq 'pursuit' && $game->someone_close($_)
+            ! ($distance eq 'near' && $c->{$distance} eq 'pursuit' && $game->someone_close($_))
         } @pls;
         if(@pls)
         {

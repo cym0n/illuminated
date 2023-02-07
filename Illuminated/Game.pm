@@ -53,7 +53,7 @@ has interface_options => (
         ['^(S)( (.*))?$', "[S]ituation"], 
         ['^(A)( (.*))$',  "[A]ttack enemy (mind try)"], 
         ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"], 
-        ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"], 
+        ['^(F)( (.*))$', "[F]ly away from enemies (speed try)"], 
     ] }
 );
 has interface_weapons => (
@@ -665,8 +665,7 @@ sub situation
     print "\n";
     foreach my $f (@{$self->foes})
     {
-        say $f->name . " (" .  $f->type . "): HEALTH " . $f->health . " " . 
-            join(" ", $f->aware_text, $self->get_distance($p, $f)); 
+        say $f->description . " <" . $self->get_distance($p, $f) . ">";
     }
     print "\n";
     return 0;
