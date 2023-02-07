@@ -40,4 +40,20 @@ sub aware_text
     }
 }
 
+sub calculate_effects
+{
+    my $self = shift;
+    my $event = shift;
+    my $data = shift;
+    if($event eq 'before harm foe')
+    {
+        if($data->{weapon}->type eq 'sword' && $self->has_status('parry'))
+        {
+            say $self->name . " null damage from " . $data->{attacker}->name . " and lose parry";
+            $self->deactivate_status('parry');
+            $data->{damage} = 0;
+        }
+    }
+}
+
 1;

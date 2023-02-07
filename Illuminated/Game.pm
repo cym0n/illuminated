@@ -2,6 +2,7 @@ package Illuminated::Game;
 
 use v5.10;
 use Moo;
+use Data::Dumper;
 use Illuminated::Weapon;
 use Illuminated::Stand::Player;
 use Illuminated::Stand::Foe;
@@ -30,7 +31,11 @@ has foe_templates => (
         gunner => {
             health => 2,
             type => 'gunner',
-        }
+        },
+        gladiator => {
+            health => 2,
+            type => 'gladiator',
+        }    
     } } 
 );
 has distance_matrix => (
@@ -59,6 +64,41 @@ has active_player => (
     is => 'rw',
     default => undef,
 );
+has weapon_templates => (
+    is => 'ro',
+    default => sub { {
+        'balthazar' => {
+            name => 'balthazar',
+            type => 'rifle',
+            try_type => 'mind',
+            range => [ 'near' ],
+            damage => 1
+        },
+        'caliban' => {
+            name => 'caliban',
+            type => 'sword',
+            try_type => 'power',
+            range => [ 'close' ],
+            damage => 2
+        },
+        'reiter' => {
+            name => 'reiter',
+            type => 'rifle',
+            try_type => 'mind',
+            range => [ 'far' ],
+            damage => 1
+        },
+        'aegis' => {
+            name => 'aegis',
+            type => 'shield',
+            try_type => 'power',
+            range => [ ],
+            damage => 0
+        }
+    } }
+);
+
+
 
 with 'Illuminated::Role::Interactive';
 
@@ -80,42 +120,13 @@ sub init
         }
     );
 
-    my %foe_templates = (
-        thug => {
-            health => 2,
-            type => 'thug'
-        },
-        gunner => {
-            health => 2,
-            type => 'gunner',
-        }
-    );
-
-    my %weapons = (
-        'balthazar' => {
-            name => 'balthazar',
-            type => 'rifle',
-            try_type => 'mind',
-            range => [ 'near' ],
-            damage => 1
-        },
-        'caliban' => {
-            name => 'caliban',
-            type => 'sword',
-            try_type => 'power',
-            range => [ 'close' ],
-            damage => 2
-        }
-    );
-
-
     my $player;
     $player = $self->add_player('Paladin', 'Maverick', $player_templates{'Maverick'});
-    $player->add_weapon(Illuminated::Weapon->new($weapons{'balthazar'}));
-    $player->add_weapon(Illuminated::Weapon->new($weapons{'caliban'}));
+    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
+    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
     $player = $self->add_player('Templar', 'Tesla', $player_templates{'Tesla'});
-    $player->add_weapon(Illuminated::Weapon->new($weapons{'balthazar'}));
-    $player->add_weapon(Illuminated::Weapon->new($weapons{'caliban'}));
+    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
+    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
 
     $self->current_tile(Illuminated::Tile::GuardedSpace->new());
 
@@ -289,15 +300,13 @@ sub add_foe
 
     my $f = undef;
     my $name = shift;
-    
-    if(ref($name) eq 'Illuminated::Stand::Foe')
+    my $type = shift;
+    my $weapons = shift;
+
+    $f = Illuminated::Stand::Foe->new({ name => $name, type => $type, health => $self->foe_templates->{$type}->{health} });
+    for(@{$weapons})
     {
-        $f = $name;
-    }
-    else
-    {
-        my $type = shift;
-        $f = Illuminated::Stand::Foe->new({ name => $name, type => $type, health => $self->foe_templates->{$type}->{health} });
+        $f->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{$_}));
     }
     push @{$self->foes}, $f;
     foreach(@{$self->players})
@@ -439,14 +448,16 @@ sub _someone_distance
 sub harm_foe
 {
     my $self = shift;
-    my $foe = shift;
-    my $damage = shift;
-    $foe->health($foe->health - $damage);
-    say $foe->name . " gets $damage damages";
-    if($foe->health <= 0)
+    my $attack_data = shift;
+    $self->calculate_effects('before harm foe', $attack_data);
+
+    $attack_data->{foe}->health($attack_data->{foe}->health - $attack_data->{damage});
+    say $attack_data->{foe}->name . " gets " . $attack_data->{damage} . " damages";
+    if($attack_data->{foe}->health <= 0)
     {
-        $self->kill_foe($foe);
+        $self->kill_foe($attack_data->{foe});
     }
+    $self->calculate_effects('after harm foe', $attack_data);
 }
 
 sub harm_player
@@ -545,6 +556,11 @@ sub execute_foe
         say $foe->name . " flyes to the " . $target->name . "!";
         $self->move($target, $foe, 'closer');
     }
+    elsif($command eq 'parry')
+    {
+        say $foe->name . " raises the aegis";
+        $self->activate_foe_weapon($foe, $foe->get_weapon('aegis'), $target);
+    }
 }
 
 sub assign_action_point
@@ -595,6 +611,35 @@ sub end_condition
     return 1;
 }
 
+sub calculate_effects
+{
+    my $self = shift;
+    my $event = shift;
+    my $data = shift;
+    my @triggering;
+    if( $event eq 'before harm foe' ||
+        $event eq 'after harm foe'     )
+    {
+        @triggering = ($data->{foe}, $data->{weapon}, $data->{attacker});
+    }
+    for(@triggering)
+    {
+        $_->calculate_effects($event, $data);
+    }
+}
+
+sub activate_foe_weapon
+{
+    my $self = shift;
+    my $foe = shift;
+    my $weapon = shift;
+    my $target = shift;
+    if($weapon->name eq 'aegis')
+    {
+        $foe->activate_status('parry');
+    }
+}
+
 ### Combat commands
 
 sub situation
@@ -634,7 +679,8 @@ sub fly_closer
     my $foe = $self->get_foe($fname);
     if(! $foe) { say "$fname doesn't exists or is inactive"; return 0 }
     if(! $foe->aware) { say "$fname " . $foe->aware_text; return 0 }
-    if(my $cl = $self->close_to($foe)) { say "$fname already close to " . $cl->name; return 0}
+    my $cl = $self->close_to($foe);
+    if($cl && $self->get_distance($self->active_player, $foe) eq 'near') { say "$fname already close to " . $cl->name; return 0}
     say "Flying closer to $fname (speed try)";
     my $throw = $self->dice($self->active_player->speed);
     if($throw >= 5)
@@ -755,15 +801,24 @@ sub attack_foe
     my $try = $w->try_type;
     my $damage = $w->damage;
     my $throw = $self->dice($self->active_player->$try);
+    my %attack_data = (
+        attacker => $self->active_player,
+        weapon => $w,
+        foe => $foe,
+        damage => $damage,
+        throw => $throw 
+    );
+
+
     if($throw >= 5)
     {
         say "Successful attack!";
-        $self->harm_foe($foe, $damage);
+        $self->harm_foe(\%attack_data);
     }
     elsif($throw >= 3)
     {
         say "Successful attack with consequences!";
-        $self->harm_foe($foe, $damage);
+        $self->harm_foe(\%attack_data);
         $self->assign_action_point($foe);
     }
     else

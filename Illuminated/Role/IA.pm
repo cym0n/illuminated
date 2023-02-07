@@ -17,6 +17,11 @@ sub thug
 {
     my $self = shift;
     my $game = shift;
+    if($game->unaware_foe())
+    {
+        my $throw = $game->dice(1, 1);
+        return ('warn', undef) if($throw < 3);
+    }
     return $self->_standard_ia($game, { 'close' => 'away',
                                         'near'  => 'attack',
                                         'far'   => 'pursuit' });
@@ -26,9 +31,27 @@ sub gunner
 {
     my $self = shift;
     my $game = shift;
+    if($game->unaware_foe())
+    {
+        my $throw = $game->dice(1, 1);
+        return ('warn', undef) if($throw < 3);
+    }
     return $self->_standard_ia($game, { 'close' => 'away',
                                         'near'  => 'away',
                                         'far'   => 'attack' });
+}
+
+sub gladiator
+{
+    my $self = shift;
+    my $game = shift;
+    if(! $self->has_status('parry'))
+    {
+        return ('parry', undef);
+    }
+    return $self->_standard_ia($game, { 'close' => 'attack',
+                                        'near'  => 'pursuit',
+                                        'far'   => 'pursuit' });
 }
 
 sub _standard_ia
@@ -38,30 +61,25 @@ sub _standard_ia
     my $c = shift;
     my $command = undef;
     my $target = undef;
-    if($game->unaware_foe())
+    foreach my $distance (qw(close near far))
     {
-        my $throw = $game->dice(1, 1);
-        $command = 'warn' if($throw < 3);
-    }
-    if(! $command)
-    {
-        foreach my $distance (qw(close near far))
+        my @pls = $game->foe_distance($self, $distance);
+        @pls = grep {
+            $distance eq 'near' && $c->{$distance} eq 'pursuit' && $game->someone_close($_)
+        } @pls;
+        if(@pls)
         {
-            my @pls = $game->foe_distance($self, $distance);
-            if(@pls)
+            $command = $c->{$distance};
+            if($self->focus && grep { $_->tag eq $self->focus->tag} @pls)
             {
-                $command = $c->{$distance};
-                if($self->focus && grep { $_->tag eq $self->focus->tag} @pls)
-                {
-                    $target = $self->focus;
-                }
-                else
-                {
-                    $target = $pls[rand @pls];
-                    $self->focus($target);
-                }
-                last;   
+                $target = $self->focus;
             }
+            else
+            {
+                $target = $pls[rand @pls];
+                $self->focus($target);
+            }
+            last;   
         }
     }
     if(! $command )

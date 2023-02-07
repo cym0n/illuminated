@@ -28,6 +28,10 @@ has weapons => (
     is => 'ro',
     default => sub { [] }
 );
+has status => (
+    is => 'rw',
+    default => sub { [] }
+);
 
 sub add_weapon
 {
@@ -57,6 +61,34 @@ sub get_weapon
     }
     return undef
 }
+
+sub calculate_effects
+{
+}
+
+sub has_status
+{
+    my $self = shift;
+    my $s = shift;
+    return grep { $_ eq $s} @{$self->status}
+}
+
+sub activate_status
+{
+    my $self = shift;
+    my $s = shift;
+    if(! $self->has_status($s))
+    {
+        push @{$self->status}, $s;
+    }
+}
+sub deactivate_status
+{
+    my $self = shift;
+    my $s = shift;
+    @{$self->status} = grep { $_ ne $s} @{$self->status};
+}
+
 
 1;
 

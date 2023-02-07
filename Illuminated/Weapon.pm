@@ -33,4 +33,8 @@ sub good_for_range
     }
 }
 
+sub calculate_effects
+{
+}
+
 1;
