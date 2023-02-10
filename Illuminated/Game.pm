@@ -214,7 +214,7 @@ sub interface_preconditions
 
     my @options = (  ['^(S)( (.*))?$', "[S]ituation"] );
     my @ranges;
-    if($game->someone_close($game->active_player))
+    if($game->at_distance($game->active_player, 'close'))
     {
         $self->interface_header("Combat zone - close combat");
         push @options, ['^(D)$', "[D]isengage (power try)"]; 
@@ -232,7 +232,7 @@ sub interface_preconditions
     my %weapons_mapping = ();
     foreach my $d (@ranges)
     {
-        if($game->_someone_distance($game->active_player, $d))
+        if($game->at_distance($game->active_player, $d))
         {
             my @weaps = $game->active_player->get_weapons_by_range($d);
             foreach my $w (@weaps)
@@ -248,23 +248,6 @@ sub interface_preconditions
     }
     $game->interface_options(\@options);
     $game->interface_weapons(\%weapons_mapping);
-    
-#    if($game->someone_close($game->active_player))
-#    {
-#        $self->interface_options([ 
-#            ['^(S)( (.*))?$', "[S]ituation"], 
-#            ['^(A)( (.*))?$', "[A]ttack enemy (mind try)"], 
-#            ]);
-#    }
-#    else
-#    {
-#        $self->interface_options([ 
-#            ['^(S)( (.*))?$', "[S]ituation"], 
-#            ['^(A)( (.*))$',  "[A]ttack enemy (mind try)"], 
-#            ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"], 
-#            ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"], 
-#            ]);
-#    }
 }
 
 sub add_player
@@ -332,15 +315,41 @@ sub get_foe
     }
     return undef;
 }
-sub set_foe_distance
+sub detect_player_foe
 {
     my $self = shift;
-    my $player = shift;
+    my $a = shift;
+    my $b = shift;
+    my $player = undef;
     my $foe = shift;
+    if(ref($a) eq 'Illuminated::Stand::Player')
+    {
+        $player = $a;
+        $foe = $b;
+    }
+    elsif(ref($a) eq 'Illuminated::Stand::Foe')
+    {
+        $player = $b;
+        $foe = $a;
+    }
+    return ($player, $foe);
+}
+sub set_distance
+{
+    my $self = shift;
+    my $a = shift;
+    my $b = shift;
+    my ($player, $foe) = $self->detect_player_foe($a, $b);
     my $distance = shift;
-    my $pobj = $self->get_player($player);
-    my $fobj = $self->get_foe($foe);
-    $self->set_distance($pobj, $fobj, $distance);
+    $self->distance_matrix->{$player->tag}->{$foe->tag} = $distance
+}
+sub get_distance
+{
+    my $self = shift;
+    my $a = shift;
+    my $b = shift;
+    my ($player, $foe) = $self->detect_player_foe($a, $b);
+    return $self->distance_matrix->{$player->tag}->{$foe->tag}
 }
 sub set_foe_far_from_all
 {
@@ -354,26 +363,13 @@ sub set_foe_far_from_all
         }
     }
 }
-sub set_distance
-{
-    my $self = shift;
-    my $player = shift;
-    my $foe = shift;
-    my $distance = shift;
-    $self->distance_matrix->{$player->tag}->{$foe->tag} = $distance
-}
-sub get_distance
-{
-    my $self = shift;
-    my $player = shift;
-    my $foe = shift;
-    return $self->distance_matrix->{$player->tag}->{$foe->tag}
-}
+
 sub move
 {
     my $self = shift;
-    my $player = shift;
-    my $foe = shift;
+    my $a = shift;
+    my $b = shift;
+    my ($player, $foe) = $self->detect_player_foe($a, $b);
     my $direction = shift;
     if($direction eq 'farther')
     {
@@ -398,52 +394,39 @@ sub move
         }
     }
 }
-
-sub foe_distance
+sub at_distance
 {
     my $self = shift;
-    my $foe = shift;
+    my $a = shift;
     my $distance = shift;
-    my @pls = ();
-    foreach(@{$self->players})
+    my $random = shift;
+    my ($player, $foe) = $self->detect_player_foe($a, undef);
+    my $subject = undef;
+    my @select;
+    my @out = ();
+    if($player)
     {
-        if($self->get_distance($_, $foe) eq $distance) { push @pls, $_; };
+        $subject = $player;
+        @select = @{$self->foes};
     }
-    return @pls;
-}
-
-sub close_to
-{
-    my $self = shift;
-    my $foe = shift;
-    foreach(@{$self->players})
+    elsif($foe)
     {
-        if($self->get_distance($_, $foe) eq 'close') { return $_ };
+        $subject = $foe;
+        @select = @{$self->players};
     }
-    return undef;
-}
-sub someone_near
-{
-    my $self = shift;
-    my $player = shift;
-    return $self->_someone_distance($player, 'near')
-}
-sub someone_close
-{
-    my $self = shift;
-    my $player = shift;
-    return $self->_someone_distance($player, 'close')
-}
-sub _someone_distance
-{
-    my $self = shift;
-    my $player = shift;
-    my $distance = shift;
-    foreach(@{$self->foes})
+    for(@select)
     {
-        if($self->get_distance($player, $_) eq $distance) { return $_ };
+        push @out, $_ if($self->get_distance($subject, $_) eq $distance) 
     }
-    return undef;
+    if($random)
+    {
+        my $pick = $out[rand @out];
+        return ( $pick );
+    }
+    else
+    {
+        return @out;
+    }
 }
 sub harm_foe
 {
@@ -459,7 +442,6 @@ sub harm_foe
     }
     $self->calculate_effects('after harm foe', $attack_data);
 }
-
 sub harm_player
 {
     my $self = shift;
@@ -473,8 +455,6 @@ sub harm_player
         @{$self->players} = grep { $_->tag ne $target->tag } @{$self->players};
     }
 }
-
-
 sub kill_foe
 {
     my $self = shift;
@@ -494,7 +474,6 @@ sub aware_foe
     }
     return 0;
 }
-
 sub unaware_foe
 {
     my $self = shift;
@@ -505,7 +484,6 @@ sub unaware_foe
     }
     return @unw;
 }
-
 sub dice
 {
     my $self = shift;
@@ -525,7 +503,6 @@ sub dice
     say join (" ", @throws) . " => " . $result if ! $silent;
     return $result;
 }
-
 sub execute_foe
 {
     my $self = shift;
@@ -562,7 +539,6 @@ sub execute_foe
         $self->activate_foe_weapon($foe, $foe->get_weapon('aegis'), $target);
     }
 }
-
 sub assign_action_point
 {
     my $self = shift;
@@ -574,7 +550,6 @@ sub assign_action_point
     $foe->action_points($foe->action_points + 1);
     say "Action point given to: " . $foe->name;
 }
-
 sub foes_turn
 {
     my $self = shift;
@@ -587,14 +562,22 @@ sub foes_turn
         {
             if($f->action_points > 0)
             {
-                $done = 1;
-                $f->action_points($f->action_points -1);
-                $f->ia($self);
+                if($f->aware)
+                {
+                    $done = 1;
+                    $f->action_points($f->action_points -1);
+                    $f->ia($self);
+                }
+                else
+                {
+                    say $f->name . " has action point but is unaware! Action point destroyed";
+                    $done = 1;
+                    $f->action_points($f->action_points -1);
+                }
             }
         }
     }
 }
-
 sub end_condition
 {
     my $self = shift;
@@ -610,7 +593,6 @@ sub end_condition
     }    
     return 1;
 }
-
 sub calculate_effects
 {
     my $self = shift;
@@ -627,7 +609,6 @@ sub calculate_effects
         $_->calculate_effects($event, $data);
     }
 }
-
 sub activate_foe_weapon
 {
     my $self = shift;
@@ -678,7 +659,7 @@ sub fly_closer
     my $foe = $self->get_foe($fname);
     if(! $foe) { say "$fname doesn't exists or is inactive"; return 0 }
     if(! $foe->aware) { say "$fname " . $foe->aware_text; return 0 }
-    my $cl = $self->close_to($foe);
+    my ( $cl ) = $self->at_distance($foe, 'close', 1);
     if($cl && $self->get_distance($self->active_player, $foe) eq 'near') { say "$fname already close to " . $cl->name; return 0}
     say "Flying closer to $fname (speed try)";
     my $throw = $self->dice($self->active_player->speed);
@@ -710,7 +691,7 @@ sub fly_away
     my @targets;
     if(lc($who) eq '_all')
     {
-        if(! $self->someone_near($self->active_player)) { say "Nobody is near"; return 0 }
+        if(! $self->at_distance($self->active_player, 'near')) { say "Nobody is near"; return 0 }
         say "Flying away from all enemies (speed try)";
         @targets = ( @{$self->foes} );
     }
@@ -782,7 +763,7 @@ sub attack_foe
     my $w = $self->active_player->get_weapon($self->interface_weapons->{$answer});
 
     my $combat_type = undef;
-    $foe = $self->someone_close($self->active_player);
+    ( $foe ) = $self->at_distance($self->active_player, 'close', 1);
     if(! $foe)
     {
         my $fname = shift;
@@ -831,7 +812,7 @@ sub attack_foe
 sub disengage
 {
     my $self = shift;
-    my $foe = $self->someone_close($self->active_player);
+    my ( $foe ) = $self->at_distance($self->active_player, 'close', 1);
     if(! $foe) { say "Nobody close to " . $self->active_player->name; return 0 };
     say "Disengaging from " . $foe->name . " (power try)";
     my $throw = $self->dice($self->active_player->power);
