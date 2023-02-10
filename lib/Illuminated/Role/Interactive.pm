@@ -12,6 +12,29 @@ has interface_options => (
     is => 'ro',
     default => sub { [] }
 );
+has auto_commands => (
+    is => 'ro',
+    default => sub { [] }
+);
+has auto_commands_counter => (
+    is => 'rw',
+    default => 0,
+);
+
+sub auto
+{
+    my $self = shift;
+    if($self->auto_commands->[$self->auto_commands_counter])
+    {
+        my $value = $self->auto_commands->[$self->auto_commands_counter];
+        $self->auto_commands_counter = $self->auto_commands_counter + 1;    
+        return $value;
+    }
+    else
+    {
+        return undef;
+    }
+}
 
 sub interface_preconditions
 {
@@ -41,9 +64,18 @@ sub choice
     my $game = shift;
     my $answer = undef;
     $self->interface($game);
-    $answer = <STDIN>;
+    my $auto = $self->auto;
+    if($auto)
+    {
+        $answer = $auto;
+    }
+    else
+    {
+        $answer = <STDIN>;
+    }
     $answer = uc($answer);
     chomp $answer;
+        
     for(@{$self->interface_options})
     {
         my $reg = $_->[0]; 

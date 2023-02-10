@@ -7,4 +7,5 @@ use lib 'lib';
 use Illuminated::Game;
 
 my $game = Illuminated::Game->new();
-$game->init();
+$game->standard_game();
+$game->run();

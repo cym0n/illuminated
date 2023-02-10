@@ -21,6 +21,23 @@ has current_tile => (
     is => 'rw',
     default => undef,
 );
+has player_templates => (
+    is => 'ro',
+    default => sub { {
+        'Maverick' => {
+            health => 10,
+            power => 3,
+            speed => 2,
+            mind => 1,
+        },
+        'Tesla' => {
+            health => 10,
+            power => 1,
+            speed => 1,
+            mind => 3,
+        }
+    } }
+);
 has foe_templates => (
     is => 'ro',
     default => sub { {
@@ -97,39 +114,36 @@ has weapon_templates => (
         }
     } }
 );
+has loaded_dice => (
+    is => 'ro',
+    default => sub { [] }
+);
+has loaded_dice_counter => (
+    is => 'rw',
+    default => 0
+);
 
 
 
 with 'Illuminated::Role::Interactive';
 
-sub init
+sub standard_game
 {
     my $self = shift;
-    my %player_templates = (
-        'Maverick' => {
-            health => 10,
-            power => 3,
-            speed => 2,
-            mind => 1,
-        },
-        'Tesla' => {
-            health => 10,
-            power => 1,
-            speed => 1,
-            mind => 3,
-        }
-    );
-
     my $player;
-    $player = $self->add_player('Paladin', 'Maverick', $player_templates{'Maverick'});
+    $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
-    $player = $self->add_player('Templar', 'Tesla', $player_templates{'Tesla'});
+    $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
-
     $self->current_tile(Illuminated::Tile::GuardedSpace->new());
+}
 
+
+sub run
+{
+    my $self = shift;
     my $fighting = 1;
     my $answer;
     my $arg;
@@ -484,6 +498,24 @@ sub unaware_foe
     }
     return @unw;
 }
+
+sub throw_loaded_die
+{
+    my $self = shift;
+    if($self->loaded_dice->[$self->loaded_dice_counter])
+    {
+        my $value = $self->loaded_dice->[$self->loaded_dice_counter];
+        $self->loaded_dice_counter = $self->loaded_dice_counter + 1;    
+        return $value;
+    }
+    else
+    {
+        return undef;
+    }
+
+}
+
+
 sub dice
 {
     my $self = shift;
@@ -496,7 +528,15 @@ sub dice
 
     for(my $i = 0; $i < $many; $i++)
     {
-        my $throw = int(rand(6)) + 1;
+        my $throw;
+        if(my $loaded = $self->throw_loaded_die())
+        {   
+            $throw = $loaded;
+        }
+        else
+        {
+            $throw = int(rand(6)) + 1;
+        }
         push @throws, $throw;
         $result = $throw if($throw > $result);
     }
