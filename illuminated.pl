@@ -2,7 +2,7 @@
 
 use strict;
 use v5.10;
-use lib '.';
+use lib 'lib';
 
 use Illuminated::Game;
 
