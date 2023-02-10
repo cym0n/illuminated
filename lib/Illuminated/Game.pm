@@ -130,6 +130,7 @@ with 'Illuminated::Role::Interactive';
 sub standard_game
 {
     my $self = shift;
+    my $auto_commands = shift;
     my $player;
     $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
@@ -137,9 +138,8 @@ sub standard_game
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
-    $self->current_tile(Illuminated::Tile::GuardedSpace->new());
+    $self->current_tile(Illuminated::Tile::GuardedSpace->new({ auto_commands => $auto_commands }));
 }
-
 
 sub run
 {
@@ -147,6 +147,7 @@ sub run
     my $fighting = 1;
     my $answer;
     my $arg;
+    say "Runrunrun";
     while($fighting)
     { 
         if(! $self->current_tile->running)
@@ -505,7 +506,7 @@ sub throw_loaded_die
     if($self->loaded_dice->[$self->loaded_dice_counter])
     {
         my $value = $self->loaded_dice->[$self->loaded_dice_counter];
-        $self->loaded_dice_counter = $self->loaded_dice_counter + 1;    
+        $self->loaded_dice_counter($self->loaded_dice_counter + 1);    
         return $value;
     }
     else

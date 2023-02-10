@@ -27,7 +27,7 @@ sub auto
     if($self->auto_commands->[$self->auto_commands_counter])
     {
         my $value = $self->auto_commands->[$self->auto_commands_counter];
-        $self->auto_commands_counter = $self->auto_commands_counter + 1;    
+        $self->auto_commands_counter($self->auto_commands_counter + 1);    
         return $value;
     }
     else
