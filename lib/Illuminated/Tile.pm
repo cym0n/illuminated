@@ -9,7 +9,7 @@ has name => (
     is => 'ro'
 );
 
-has running => (
+has entered => (
     is => 'rw',
     default => 0,
 );
@@ -68,11 +68,11 @@ sub setup_foe
         my $d_label = $d;
         $d_label .= $d eq 'far' ? " from " : " ";
         $d_label .= $p->name;
-        say $f->name . " is aware and " . $d_label;
+        $game->log($f->name . " is aware and " . $d_label);
     }
     else
     {
-        say $f->name . " is unaware";
+        $game->log($f->name . " is unaware");
     }
 }
 

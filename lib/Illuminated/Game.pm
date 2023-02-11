@@ -64,13 +64,19 @@ has interface_header => (
     is => 'rw',
     default => "Combat zone"
 );
+has system_options => (
+    is => 'rw',
+    default => sub { [
+        ['(QUIT)', "Exit game"]
+    ] }
+);
 has interface_options => (
     is => 'rw',
     default => sub {  [ 
-        ['^(S)( (.*))?$', "[S]ituation"], 
-        ['^(A)( (.*))$',  "[A]ttack enemy (mind try)"], 
-        ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"], 
-        ['^(F)( (.*))$', "[F]ly away from enemies (speed try)"], 
+        ['(S)( (.*))?', "[S]ituation"], 
+        ['(A)( (.*))',  "[A]ttack enemy (mind try)"], 
+        ['(C)( (.*))',  "[C]lose on enemy (speed try)"], 
+        ['(F)( (.*))', "[F]ly away from enemies (speed try)"], 
     ] }
 );
 has interface_weapons => (
@@ -122,14 +128,20 @@ has loaded_dice_counter => (
     is => 'rw',
     default => 0
 );
+has running => (
+    is => 'rw',
+    default => 1
+);
 
 
 
 with 'Illuminated::Role::Interactive';
+with 'Illuminated::Role::Logger';
 
 sub standard_game
 {
     my $self = shift;
+    $self->init_log;
     my $auto_commands = shift;
     my $player;
     $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
@@ -138,88 +150,115 @@ sub standard_game
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
-    $self->current_tile(Illuminated::Tile::GuardedSpace->new({ auto_commands => $auto_commands }));
+    $self->current_tile(Illuminated::Tile::GuardedSpace->new());
 }
 
 sub run
 {
     my $self = shift;
-    my $fighting = 1;
     my $answer;
     my $arg;
-    say "Runrunrun";
-    while($fighting)
+    $self->log("The game is on");
+    while($self->running)
     { 
-        if(! $self->current_tile->running)
+        if(! $self->current_tile->entered)
         {
             $self->current_tile->init_foes($self);
             my $i = 0;
-            while($self->players->[$i])
+            while($self->players->[$i] && $self->running)
             {
                 $self->active_player($self->players->[$i]);
-                say "\nACTIVE PLAYER: " . $self->active_player->name;
+                $self->log("\nACTIVE PLAYER: " . $self->active_player->name);
                 while(! $answer)
                 {
                     ($answer, $arg) = $self->current_tile->choice($self)
                 }
-                my $res = $self->current_tile->gate_run($self, $self->active_player, $answer);
+                my $res = $self->system_commands($answer, $arg) || $self->current_tile->gate_run($self, $self->active_player, $answer);
                 if($res)
                 {
                     $i++;
                 }
                 $answer = undef; 
             }
-            $self->current_tile->running(1);
+            $self->current_tile->entered(1);
         }
         else
         {
             my $i = 0;
-            while($self->players->[$i])
+            while($self->players->[$i] && $self->running)
             {
                 $self->active_player($self->players->[$i]);
-                say "\nACTIVE PLAYER: " . $self->active_player->name;
+                $self->log("\nACTIVE PLAYER: " . $self->active_player->name);
                 my $res = 0;
                 while(! $answer)
                 {
                     ($answer, $arg) = $self->choice($self)
                 }
-                if($answer eq 'S')
-                {
-                    $res = $self->situation($arg);
-                }
-                elsif($answer eq 'C')
-                {
-                    $res = $self->fly_closer($arg);
-                }
-                elsif($answer eq 'F')
-                {
-                    $res = $self->fly_away($arg);
-                }
-                elsif($answer =~ /^A\d+$/)
-                {
-                    $res = $self->attack_foe($answer, $arg);
-                }
-                elsif($answer eq 'D')
-                {
-                    $res = $self->disengage();
-                }
+                $res = $self->system_commands($answer, $arg) || $self->standard_commands($answer, $arg);
                 $answer = undef;
-                $fighting = $self->end_condition(); 
-                if($res && $fighting)
+                $self->end_condition(); 
+                if($res && $self->running)
                 {
                     $self->foes_turn();
-                    $fighting = $self->end_condition(); 
+                    $self->end_condition(); 
                     $i++;
                 }
             }
-            if($fighting)
+            if($self->running)
             {
                 $self->assign_action_point();
                 $self->foes_turn();
-                $fighting = $self->end_condition(); 
+                $self->end_condition(); 
             }
         }
     }
+}
+
+sub standard_commands
+{
+    my $self = shift;
+    my $answer = shift;
+    my $arg = shift;
+    if($answer eq 'S')
+    {
+        $self->situation($arg);
+        return 0;
+    }
+    elsif($answer eq 'C')
+    {
+        $self->fly_closer($arg);
+        return 1;
+    }
+    elsif($answer eq 'F')
+    {
+        $self->fly_away($arg);
+        return 1;
+    }
+    elsif($answer =~ /^A\d+$/)
+    {
+        $self->attack_foe($answer, $arg);
+        return 1;
+    }
+    elsif($answer eq 'D')
+    {
+        $self->disengage();
+        return 1;
+    }
+    return 0;
+}
+
+sub system_commands
+{
+    my $self = shift;
+    my $answer = shift;
+    my $arg = shift;
+    if($answer eq 'QUIT')
+    {
+        $self->log("Player quitted");
+        $self->running(0);
+        return 1;
+    }
+    return 0;
 }
 
 sub interface_preconditions
@@ -450,7 +489,7 @@ sub harm_foe
     $self->calculate_effects('before harm foe', $attack_data);
 
     $attack_data->{foe}->health($attack_data->{foe}->health - $attack_data->{damage});
-    say $attack_data->{foe}->name . " gets " . $attack_data->{damage} . " damages";
+    $self->log($attack_data->{foe}->name . " gets " . $attack_data->{damage} . " damages");;
     if($attack_data->{foe}->health <= 0)
     {
         $self->kill_foe($attack_data->{foe});
@@ -463,10 +502,10 @@ sub harm_player
     my $target = shift;
     my $damage = shift;
     $target->health($target->health - 1);
-    say $target->name . " receives $damage damages. " . $target->name . "'s health is now " . $target->health;
+    $self->log($target->name . " receives $damage damages. " . $target->name . "'s health is now " . $target->health);
     if($target->health <= 0)
     {
-        say $target->name . " killed!";
+        $self->log($target->name . " killed!");
         @{$self->players} = grep { $_->tag ne $target->tag } @{$self->players};
     }
 }
@@ -476,7 +515,7 @@ sub kill_foe
     my $f = shift;
     $f->health(0);
     $f->active(0);
-    say $f->name . " killed!";
+    $self->log($f->name . " killed!");
     @{$self->foes} = grep { $_->tag ne $f->tag}  @{$self->foes};
 }
 
@@ -541,7 +580,7 @@ sub dice
         push @throws, $throw;
         $result = $throw if($throw > $result);
     }
-    say join (" ", @throws) . " => " . $result if ! $silent;
+    $self->log(join (" ", @throws) . " => " . $result) if ! $silent;
     return $result;
 }
 sub execute_foe
@@ -555,28 +594,28 @@ sub execute_foe
     {
         my @unw = $self->unaware_foe();
         my $f = $unw[rand @unw];
-        say $foe->name . " reaches " . $f->name . " and makes him aware!";
+        $self->log($foe->name . " reaches " . $f->name . " and makes him aware!");
         $f->aware(1);
         $self->set_foe_far_from_all($f);
     }
     elsif($command eq 'away')
     {
-        say $foe->name . " steps away from " . $target->name . "!";
+        $self->log($foe->name . " steps away from " . $target->name . "!");
         $self->move($target, $foe, 'farther');
     }
     elsif($command eq 'attack')
     {
-        say $foe->name . " deals 1 damage to " . $target->name . "!";
+        $self->log($foe->name . " deals 1 damage to " . $target->name . "!");
         $self->harm_player($target, 1);
     }
     elsif($command eq 'pursuit')
     {
-        say $foe->name . " flyes to the " . $target->name . "!";
+        $self->log($foe->name . " flyes to the " . $target->name . "!");
         $self->move($target, $foe, 'closer');
     }
     elsif($command eq 'parry')
     {
-        say $foe->name . " raises the aegis";
+        $self->log($foe->name . " raises the aegis");
         $self->activate_foe_weapon($foe, $foe->get_weapon('aegis'), $target);
     }
 }
@@ -589,7 +628,7 @@ sub assign_action_point
         $foe = $self->foes->[rand @{$self->foes}];
     }
     $foe->action_points($foe->action_points + 1);
-    say "Action point given to: " . $foe->name;
+    $self->log("Action point given to: " . $foe->name);
 }
 sub foes_turn
 {
@@ -611,7 +650,7 @@ sub foes_turn
                 }
                 else
                 {
-                    say $f->name . " has action point but is unaware! Action point destroyed";
+                    $self->log($f->name . " has action point but is unaware! Action point destroyed");
                     $done = 1;
                     $f->action_points($f->action_points -1);
                 }
@@ -624,15 +663,14 @@ sub end_condition
     my $self = shift;
     if(! @{$self->foes})
     {
-        say "VICTORY! All foes defeated";
-        return 0;
+        $self->log("VICTORY! All foes defeated");
+        $self->running(0);
     }
     if(! @{$self->players})
     {
-        say "DEFEAT! Players destroyed";
-        return 0;
+        $self->log("DEFEAT! Players destroyed");
+        $self->running(0);
     }    
-    return 1;
 }
 sub calculate_effects
 {
@@ -647,7 +685,7 @@ sub calculate_effects
     }
     for(@triggering)
     {
-        $_->calculate_effects($event, $data);
+        $_->calculate_effects($self, $event, $data);
     }
 }
 sub activate_foe_weapon
@@ -674,7 +712,7 @@ sub situation
         $p = $self->get_player($who);
         if(! $p)
         {
-            say "Wrong player";
+            $self->log("Wrong player");
             return 0;
         }
     }
@@ -683,11 +721,11 @@ sub situation
         $p = $self->active_player;
     }
     print "\n";
-    say $p->name . ": HEALTH " . $p->health;
+    $self->log($p->name . ": HEALTH " . $p->health);
     print "\n";
     foreach my $f (@{$self->foes})
     {
-        say $f->description . " <" . $self->get_distance($p, $f) . ">";
+        $self->log($f->description . " <" . $self->get_distance($p, $f) . ">");
     }
     print "\n";
     return 0;
@@ -698,28 +736,28 @@ sub fly_closer
     my $self = shift;
     my $fname = shift;
     my $foe = $self->get_foe($fname);
-    if(! $foe) { say "$fname doesn't exists or is inactive"; return 0 }
-    if(! $foe->aware) { say "$fname " . $foe->aware_text; return 0 }
+    if(! $foe) { $self->log("$fname doesn't exists or is inactive"); return 0 }
+    if(! $foe->aware) { $self->log("$fname " . $foe->aware_text); return 0 }
     my ( $cl ) = $self->at_distance($foe, 'close', 1);
-    if($cl && $self->get_distance($self->active_player, $foe) eq 'near') { say "$fname already close to " . $cl->name; return 0}
-    say "Flying closer to $fname (speed try)";
+    if($cl && $self->get_distance($self->active_player, $foe) eq 'near') { $self->log("$fname already close to " . $cl->name); return 0}
+    $self->log("Flying closer to $fname (speed try)");
     my $throw = $self->dice($self->active_player->speed);
     if($throw >= 5)
     {
-        say "Successfull approach";
+        $self->log("Successfull approach");
         $self->move($self->active_player, $foe, 'closer');
-        say $foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name; 
+        $self->log($foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name); 
     }
     elsif($throw >= 3)
     {
-        say "Successfull approach with consequences";
+        $self->log("Successfull approach with consequences");
         $self->move($self->active_player, $foe, 'closer');
-        say $foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name;
+        $self->log($foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name);
         $self->assign_action_point($foe);
     }
     else
     {
-        say "Failed to approach!";
+        $self->log("Failed to approach!");
         $self->assign_action_point($foe);
     }
     return 1;
@@ -732,31 +770,31 @@ sub fly_away
     my @targets;
     if(lc($who) eq '_all')
     {
-        if(! $self->at_distance($self->active_player, 'near')) { say "Nobody is near"; return 0 }
-        say "Flying away from all enemies (speed try)";
+        if(! $self->at_distance($self->active_player, 'near')) { $self->log("Nobody is near"); return 0 }
+        $self->log("Flying away from all enemies (speed try)");
         @targets = ( @{$self->foes} );
     }
     else
     {
         my $f = $self->get_foe($who);
-        if(! $f) { say "$who doesn't exists or is not active"; return 0 }
-        if($self->get_distance($self->active_player, $f) ne 'near') { say "$who is not near"; return 0 }
-        say "Flying away from $who (speed try)";
+        if(! $f) { $self->log("$who doesn't exists or is not active"); return 0 }
+        if($self->get_distance($self->active_player, $f) ne 'near') { $self->log("$who is not near"); return 0 }
+        $self->log("Flying away from $who (speed try)");
         @targets = ( $f );
     }
     my $throw = $self->dice($self->active_player->speed);
     if($throw >= 5)
     {
-        say "Successfully escaped!";
+        $self->log("Successfully escaped!");
         foreach my $f ( @targets )
         {
             $self->move($self->active_player, $f, 'farther');
-            say $f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name; 
+            $self->log($f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name); 
         }
     }
     elsif($throw >= 3)
     {
-        say "Uncomplete escape! Rolling enemies one by one";
+        $self->log("Uncomplete escape! Rolling enemies one by one");
         foreach my $f ( @targets )
         {
             my $d = $self->get_distance($self->active_player, $f);
@@ -766,15 +804,15 @@ sub fly_away
                 if($throw >= 5)
                 {
                     $self->move($self->active_player, $f, 'farther');
-                    say $f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name; 
+                    $self->log($f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name); 
                 }
                 elsif($throw >= 3)
                 {
-                    say $f->name . " still $d for " . $self->active_player->name
+                    $self->log($f->name . " still $d for " . $self->active_player->name)
                 }
                 else
                 {
-                    say $f->name . " still $d for " . $self->active_player->name . " with consequences";
+                    $self->log($f->name . " still $d for " . $self->active_player->name . " with consequences");
                     $self->assign_action_point($f);
                 }
             }
@@ -782,7 +820,7 @@ sub fly_away
     }
     else
     {
-        say "Failed to escape!";
+        $self->log("Failed to escape!");
         foreach my $f ( @targets )
         {
             my $d = $self->get_distance($self->active_player, $f);
@@ -809,16 +847,16 @@ sub attack_foe
     {
         my $fname = shift;
         $foe = $self->get_foe($fname);
-        if(! $foe) { say "$fname doesn't exists or is not active"; return 0 }
+        if(! $foe) { $self->log("$fname doesn't exists or is not active"); return 0 }
         $combat_type = 'ranged';
     }
     else
     {
         $combat_type = 'close';
     }
-    if(! $w->good_for_range($self->get_distance($self->active_player, $foe))) { say "Distance not suitable"; return 0 };
+    if(! $w->good_for_range($self->get_distance($self->active_player, $foe))) { $self->log("Distance not suitable"); return 0 };
     
-    say "Attacking " . $foe->name . " with " . $w->name . " (" . $w->try_type . " try)";
+    $self->log("Attacking " . $foe->name . " with " . $w->name . " (" . $w->try_type . " try)");
     my $try = $w->try_type;
     my $damage = $w->damage;
     my $throw = $self->dice($self->active_player->$try);
@@ -833,18 +871,18 @@ sub attack_foe
 
     if($throw >= 5)
     {
-        say "Successful attack!";
+        $self->log("Successful attack!");
         $self->harm_foe(\%attack_data);
     }
     elsif($throw >= 3)
     {
-        say "Successful attack with consequences!";
+        $self->log("Successful attack with consequences!");
         $self->harm_foe(\%attack_data);
         $self->assign_action_point($foe);
     }
     else
     {
-        say "Attack failed!";
+        $self->log("Attack failed!");
         $self->assign_action_point($foe);
     }
     return 1;
@@ -854,23 +892,23 @@ sub disengage
 {
     my $self = shift;
     my ( $foe ) = $self->at_distance($self->active_player, 'close', 1);
-    if(! $foe) { say "Nobody close to " . $self->active_player->name; return 0 };
-    say "Disengaging from " . $foe->name . " (power try)";
+    if(! $foe) { $self->log("Nobody close to " . $self->active_player->name); return 0 };
+    $self->log("Disengaging from " . $foe->name . " (power try)");
     my $throw = $self->dice($self->active_player->power);
     if($throw >= 5)
     {
-        say "Successfully disengaged!";
+        $self->log("Successfully disengaged!");
         $self->move($self->active_player, $foe, 'farther');
     }
     elsif($throw >= 3)
     {
-        say "Disengaged with consequences";
+        $self->log("Disengaged with consequences");
         $self->move($self->active_player, $foe, 'farther');
         $self->assign_action_point($foe);
     }
     else
     {
-        say "Disengaging failed!";
+        $self->log("Disengaging failed!");
         $self->assign_action_point($foe);
     }
     return 1;

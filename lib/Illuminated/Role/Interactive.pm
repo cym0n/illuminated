@@ -24,10 +24,11 @@ has auto_commands_counter => (
 sub auto
 {
     my $self = shift;
-    if($self->auto_commands->[$self->auto_commands_counter])
+    my $game = shift || $self;
+    if($game->auto_commands->[$game->auto_commands_counter])
     {
-        my $value = $self->auto_commands->[$self->auto_commands_counter];
-        $self->auto_commands_counter($self->auto_commands_counter + 1);    
+        my $value = $game->auto_commands->[$game->auto_commands_counter];
+        $game->auto_commands_counter($game->auto_commands_counter + 1);    
         return $value;
     }
     else
@@ -46,16 +47,17 @@ sub interface
     my $self = shift;
     my $game = shift;
     $self->interface_preconditions($game);
-    say $self->interface_header;
-    $self->print_options;
+    $game->log($self->interface_header);
+    $self->print_options($game);;
     print "Choose: ";
 }
 sub print_options
 {
     my $self = shift;
+    my $game = shift;
     for(@{$self->interface_options})
     {
-        say $_->[1];
+        $game->log($_->[1]);
     }
 }
 sub choice
@@ -64,7 +66,7 @@ sub choice
     my $game = shift;
     my $answer = undef;
     $self->interface($game);
-    my $auto = $self->auto;
+    my $auto = $self->auto($game);
     if($auto)
     {
         $answer = $auto;
@@ -75,8 +77,9 @@ sub choice
     }
     $answer = uc($answer);
     chomp $answer;
-        
-    for(@{$self->interface_options})
+    
+    my @options = ( @{$game->system_options}, @{$self->interface_options});   
+    for(@options)
     {
         my $reg = $_->[0]; 
         if($answer =~ /^$reg$/)
@@ -84,7 +87,7 @@ sub choice
             return ($1, $3);
         }
     }
-    say "Bad option";
+    $game->log("Bad option");
     return undef;
 }
 
