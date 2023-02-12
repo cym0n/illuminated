@@ -128,6 +128,14 @@ has loaded_dice_counter => (
     is => 'rw',
     default => 0
 );
+has fake_random => (
+    is => 'ro',
+    default => sub { [] }
+);
+has fake_random_counter => (
+    is => 'rw',
+    default => 0
+);
 has running => (
     is => 'rw',
     default => 1
@@ -143,10 +151,12 @@ sub init_test
     my $package = shift;
     my $game_start = shift;
     my $loaded_dice = shift;
+    my $fake_random = shift;
     my $auto_commands = shift;
     my $game = Illuminated::Game->new(
         {   loaded_dice => $loaded_dice, 
             auto_commands => $auto_commands,
+            fake_random => $fake_random,
             log_prefix => 'test',
         }
     );
@@ -380,7 +390,7 @@ sub get_foe
     }
     else
     {   
-       return $self->foes->[rand @{$self->foes}]; 
+       return $self->foes->[$self->game_rand( @{$self->foes})]; 
     }
     return undef;
 }
@@ -489,7 +499,7 @@ sub at_distance
     }
     if($random)
     {
-        my $pick = $out[rand @out];
+        my $pick = $out[$self->game_rand( @out )];
         return ( $pick );
     }
     else
@@ -570,6 +580,33 @@ sub throw_loaded_die
 
 }
 
+sub game_rand
+{
+    my $self = shift;
+    my @input = @_;
+    my $number = undef;
+    if($#input == 1)
+    { 
+        $number = $input[0];
+    }
+    else
+    {
+        $number = $#input;
+    }
+    if(exists $self->fake_random->[$self->fake_random_counter])
+    {
+        my $value = $self->fake_random->[$self->fake_random_counter];
+        $self->log("Random tampered. Range $number, result $value");
+        $self->fake_random_counter($self->fake_random_counter + 1);    
+        return $value;
+    }
+    else
+    {
+        return int(rand $number);
+    }
+
+}
+
 
 sub dice
 {
@@ -597,11 +634,11 @@ sub dice
     }
     if($silent)
     {
-        $self->file_only(join (" ", @throws) . " => " . $result);
+        $self->file_only("Dice throw: " . join (" ", @throws) . " => " . $result);
     }
     else
     {
-        $self->log(join (" ", @throws) . " => " . $result);
+        $self->log("Dice throw: " . join (" ", @throws) . " => " . $result);
     }
     return $result;
 }
@@ -615,7 +652,7 @@ sub execute_foe
     if($command eq 'warn')
     {
         my @unw = $self->unaware_foe();
-        my $f = $unw[rand @unw];
+        my $f = $unw[$self->game_rand(@unw)];
         $self->log($foe->name . " reaches " . $f->name . " and makes him aware!");
         $f->aware(1);
         $self->set_foe_far_from_all($f);
@@ -647,7 +684,7 @@ sub assign_action_point
     my $foe = shift;
     if(! $foe || ! $foe->active)
     {
-        $foe = $self->foes->[rand @{$self->foes}];
+        $foe = $self->foes->[$self->game_rand(@{$self->foes})];
     }
     $foe->action_points($foe->action_points + 1);
     $self->log("Action point given to: " . $foe->name);

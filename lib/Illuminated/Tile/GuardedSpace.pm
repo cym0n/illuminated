@@ -98,7 +98,7 @@ sub gate_run
                 $game->log("Close to an enemy! All enemies aware!");
             }
             my @available = grep { $game->at_distance($_, "close") == 0 } @{$game->foes};
-            my $f2 = $available[rand @available];
+            my $f2 = $available[$game->game_rand( @available)];
             $self->setup_foe($game, $player, $f2, 'close', 1);
             foreach my $f3 ( @{$self->foes} )
             {
