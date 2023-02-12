@@ -138,11 +138,27 @@ has running => (
 with 'Illuminated::Role::Interactive';
 with 'Illuminated::Role::Logger';
 
+sub init_test
+{
+    my $package = shift;
+    my $game_start = shift;
+    my $loaded_dice = shift;
+    my $auto_commands = shift;
+    my $game = Illuminated::Game->new(
+        {   loaded_dice => $loaded_dice, 
+            auto_commands => $auto_commands,
+            log_prefix => 'test',
+        }
+    );
+    $game->log_prefix('test');
+    $game->$game_start;
+    return $game;
+}
+
 sub standard_game
 {
     my $self = shift;
     $self->init_log;
-    my $auto_commands = shift;
     my $player;
     $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
@@ -158,7 +174,6 @@ sub run
     my $self = shift;
     my $answer;
     my $arg;
-    $self->log("The game is on");
     while($self->running)
     { 
         if(! $self->current_tile->entered)

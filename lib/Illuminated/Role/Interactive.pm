@@ -13,7 +13,7 @@ has interface_options => (
     default => sub { [] }
 );
 has auto_commands => (
-    is => 'ro',
+    is => 'rw',
     default => sub { [] }
 );
 has auto_commands_counter => (
@@ -47,7 +47,7 @@ sub interface
     my $self = shift;
     my $game = shift;
     $self->interface_preconditions($game);
-    $game->log($self->interface_header);
+    $game->screen_only($self->interface_header);
     $self->print_options($game);;
     print "Choose: ";
 }
@@ -57,7 +57,7 @@ sub print_options
     my $game = shift;
     for(@{$self->interface_options})
     {
-        $game->log($_->[1]);
+        $game->screen_only($_->[1]);
     }
 }
 sub choice
@@ -69,6 +69,7 @@ sub choice
     my $auto = $self->auto($game);
     if($auto)
     {
+        $game->log("Autocommand retrieved: $auto");
         $answer = $auto;
     }
     else

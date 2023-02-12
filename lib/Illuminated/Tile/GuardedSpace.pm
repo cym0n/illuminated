@@ -38,7 +38,7 @@ sub interface_preconditions
     my $game = shift;
     if($game->aware_foe)
     {
-        @{$self->interface_options} = grep {$_->[0] ne 'S'} @{$self->interface_options};
+        @{$self->interface_options} = grep {$_->[0] ne '(S)'} @{$self->interface_options};
         $self->interface_header("Entering enemy patrol zone (enemies already aware)");
     }
 }
@@ -64,11 +64,11 @@ sub gate_run
         my $throw = $game->dice($player->mind);
         if($throw >= 5)
         {
-            say "PASSED UNDETECTED!";
+            $game->log("PASSED UNDETECTED!");
         }
         elsif($throw >= 3)
         {
-            say "Same result of no strategy";
+            $game->log("Same result of no strategy");
             $self->gate_run($game, $player, 'N');
         }
         else
@@ -90,13 +90,13 @@ sub gate_run
         {
             if($throw >= 5)
             {
-                say "Enemy killed by surprise! Close to a second enemy. All enemies aware!";
+                $game->log("Enemy killed by surprise! Close to a second enemy. All enemies aware!");
                 my $f = $game->get_foe(undef);
                 $game->kill_foe($f);
             }
             else
             {
-                say "Close to an enemy! All enemies aware!";
+                $game->log("Close to an enemy! All enemies aware!");
             }
             my $f2 = $game->get_foe(undef);
             $self->setup_foe($game, $player, $f2, 'close', 1);
@@ -111,7 +111,7 @@ sub gate_run
         }
         else
         {
-            say "All enemies aware!";
+            $game->log("All enemies aware!");
             foreach my $f ( @{$self->foes} )
             {
                 my $fobj = $game->get_foe($f->[0]);
