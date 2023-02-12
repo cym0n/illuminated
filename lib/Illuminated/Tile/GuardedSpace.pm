@@ -85,7 +85,6 @@ sub gate_run
     elsif($choice eq 'R')
     {
         my $throw = $game->dice($player->power);
-        $throw = 3;
         if($throw >= 3)
         {
             if($throw >= 5)
@@ -98,7 +97,8 @@ sub gate_run
             {
                 $game->log("Close to an enemy! All enemies aware!");
             }
-            my $f2 = $game->get_foe(undef);
+            my @available = grep { $game->at_distance($_, "close") == 0 } @{$game->foes};
+            my $f2 = $available[rand @available];
             $self->setup_foe($game, $player, $f2, 'close', 1);
             foreach my $f3 ( @{$self->foes} )
             {

@@ -595,7 +595,14 @@ sub dice
         push @throws, $throw;
         $result = $throw if($throw > $result);
     }
-    $self->log(join (" ", @throws) . " => " . $result) if ! $silent;
+    if($silent)
+    {
+        $self->file_only(join (" ", @throws) . " => " . $result);
+    }
+    else
+    {
+        $self->log(join (" ", @throws) . " => " . $result);
+    }
     return $result;
 }
 sub execute_foe

@@ -85,5 +85,14 @@ sub screen_only
         say $message;
     }
 }
+
+sub file_only
+{
+    my $self = shift;
+    my $message = shift;
+    open(my $fh, ">> " . $self->log_name) || die $!;
+    print {$fh} "$message\n";
+    close($fh);
+}
 1;
 
