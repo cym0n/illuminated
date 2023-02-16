@@ -8,13 +8,16 @@ use Illuminated::Game;
 my $game;
 
 diag("No strategy");
-$game = Illuminated::Game->init_test('standard_game', 
-    [6, 6, 6, 4, 4, 4, 2, 2, 2,
-     6, 6, 6, 4, 4, 4, 2, 2, 2,], 
-    [], 
-    ['N', 'N', 'quit']);
+$game = Illuminated::Game->standard_test();
+
+
+#init_test('standard_game', 
+#    [6, 6, 6, 4, 4, 4, 2, 2, 2,
+#     6, 6, 6, 4, 4, 4, 2, 2, 2,], 
+#    [], 
+#    ['N', 'N', 'quit']);
 diag("Log file is: " . $game->log_name);
-$game->run();
+#$game->run();
 my $p1 = $game->players->[0];
 my $p2 = $game->players->[1];
 

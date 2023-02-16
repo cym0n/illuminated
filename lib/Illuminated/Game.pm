@@ -121,7 +121,7 @@ has weapon_templates => (
     } }
 );
 has loaded_dice => (
-    is => 'ro',
+    is => 'rw',
     default => sub { [] }
 );
 has loaded_dice_counter => (
@@ -129,7 +129,7 @@ has loaded_dice_counter => (
     default => 0
 );
 has fake_random => (
-    is => 'ro',
+    is => 'rw',
     default => sub { [] }
 );
 has fake_random_counter => (
@@ -162,6 +162,37 @@ sub init_test
     );
     $game->log_prefix('test');
     $game->$game_start;
+    return $game;
+}
+
+sub configure_scenario
+{
+    my $self = shift;
+    my $loaded_dice = shift;
+    my $fake_random = shift;
+    my $auto_commands = shift;
+    $self->loaded_dice($loaded_dice);
+    $self->loaded_dice_counter(0);
+    $self->auto_commands($auto_commands);
+    $self->auto_commands_counter(0);
+    $self->fake_random($fake_random);
+    $self->fake_random_counter(0);
+}
+
+sub standard_test
+{
+    my $package = shift;
+    my $loaded_dice = shift;
+    my $fake_random = shift;
+    my $auto_commands = shift;
+
+    my $game = $package->init_test('standard_game', 
+                                    [6, 6, 6, 4, 4, 4, 2, 2, 2,
+                                     6, 6, 6, 4, 4, 4, 2, 2, 2,], 
+                                    [], 
+                                    ['N', 'N', 'quit']);
+    $game->run();
+    $game->configure_scenario($loaded_dice, $fake_random, $auto_commands);
     return $game;
 }
 
@@ -593,6 +624,7 @@ sub game_rand
     {
         $number = $#input;
     }
+    $self->file_only("Random evoked, range $number");
     if(exists $self->fake_random->[$self->fake_random_counter])
     {
         my $value = $self->fake_random->[$self->fake_random_counter];
