@@ -81,7 +81,7 @@ sub _standard_ia
             }
             else
             {
-                $target = $pls[$game->game_rand( @pls )];
+                $target = $pls[$game->game_rand( $#pls )];
                 $self->focus($target);
             }
             last;   
