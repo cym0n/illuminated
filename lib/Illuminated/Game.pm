@@ -83,9 +83,9 @@ has interface_weapons => (
     is => 'rw',
     default => sub { {} }
 );
-has active_player => (
+has active_player_counter => (
     is => 'rw',
-    default => undef,
+    default => 0
 );
 has weapon_templates => (
     is => 'ro',
@@ -177,6 +177,7 @@ sub configure_scenario
     $self->auto_commands_counter(0);
     $self->fake_random($fake_random);
     $self->fake_random_counter(0);
+    $self->running(1);
 }
 
 sub standard_test
@@ -189,7 +190,7 @@ sub standard_test
     my $game = $package->init_test('standard_game', 
                                     [6, 6, 6, 4, 4, 4, 2, 2, 2,
                                      6, 6, 6, 4, 4, 4, 2, 2, 2,], 
-                                    [], 
+                                    [8, 4], 
                                     ['N', 'N', 'quit']);
     $game->run();
     $game->configure_scenario($loaded_dice, $fake_random, $auto_commands);
@@ -210,20 +211,37 @@ sub standard_game
     $self->current_tile(Illuminated::Tile::GuardedSpace->new());
 }
 
+sub active_player
+{
+    my $self = shift;
+    return $self->players->[$self->active_player_counter];
+}
+sub next_player
+{
+    my $self = shift;
+    $self->active_player_counter($self->active_player_counter + 1);
+}
+sub reset_player_counter
+{
+    my $self = shift;
+    $self->active_player_counter(0);
+}
+
 sub run
 {
     my $self = shift;
     my $answer;
     my $arg;
+    $self->log("=== RUN ===");
     while($self->running)
     { 
         if(! $self->current_tile->entered)
         {
+            $self->log("Entering tile phase");
             $self->current_tile->init_foes($self);
-            my $i = 0;
-            while($self->players->[$i] && $self->running)
+            $self->reset_player_counter();
+            while($self->active_player && $self->running)
             {
-                $self->active_player($self->players->[$i]);
                 $self->log("\nACTIVE PLAYER: " . $self->active_player->name);
                 while(! $answer)
                 {
@@ -232,18 +250,18 @@ sub run
                 my $res = $self->system_commands($answer, $arg) || $self->current_tile->gate_run($self, $self->active_player, $answer);
                 if($res)
                 {
-                    $i++;
+                    $self->next_player();
                 }
                 $answer = undef; 
             }
+            $self->reset_player_counter();
             $self->current_tile->entered(1);
         }
         else
         {
-            my $i = 0;
-            while($self->players->[$i] && $self->running)
+            $self->log("combat phase");
+            while($self->active_player && $self->running)
             {
-                $self->active_player($self->players->[$i]);
                 $self->log("\nACTIVE PLAYER: " . $self->active_player->name);
                 my $res = 0;
                 while(! $answer)
@@ -257,7 +275,7 @@ sub run
                 {
                     $self->foes_turn();
                     $self->end_condition(); 
-                    $i++;
+                    $self->next_player();
                 }
             }
             if($self->running)
@@ -265,6 +283,7 @@ sub run
                 $self->assign_action_point();
                 $self->foes_turn();
                 $self->end_condition(); 
+                $self->reset_player_counter();
             }
         }
     }
@@ -528,7 +547,7 @@ sub at_distance
     {
         push @out, $_ if($self->get_distance($subject, $_) eq $distance) 
     }
-    if($random)
+    if($random && @out)
     {
         my $pick = $out[$self->game_rand( @out )];
         return ( $pick );
@@ -655,6 +674,7 @@ sub dice
         my $throw;
         if(my $loaded = $self->throw_loaded_die())
         {   
+            $self->log("Loaded die");
             $throw = $loaded;
         }
         else
