@@ -38,8 +38,8 @@ is($game->get_distance($p1, $game->foes->[3]), 'far', $game->foes->[3]->name . "
 is($game->get_distance($p2, $game->foes->[3]), 'far', $game->foes->[3]->name . " is far from " . $p2->name);
 
 is($game->foes->[4]->aware, 1, $game->foes->[4]->name . " is aware"); #delta
-is($game->get_distance($p1, $game->foes->[4]), 'far', $game->foes->[4]->name . " is far from " . $p1->name);
-is($game->get_distance($p2, $game->foes->[4]), 'far', $game->foes->[4]->name . " is far from " . $p2->name);
+is($game->get_distance($p1, $game->foes->[4]), 'near', $game->foes->[4]->name . " is near from " . $p1->name);
+is($game->get_distance($p2, $game->foes->[4]), 'near', $game->foes->[4]->name . " is near from " . $p2->name);
 
 is($game->foes->[5]->aware, 1, $game->foes->[5]->name . " is aware"); #ro
 is($game->get_distance($p1, $game->foes->[5]), 'far', $game->foes->[5]->name . " is far from " . $p1->name);

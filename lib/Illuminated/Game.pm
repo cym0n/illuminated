@@ -188,8 +188,8 @@ sub standard_test
     my $auto_commands = shift;
 
     my $game = $package->init_test('standard_game', 
-                                    [6, 6, 6, 4, 4, 4, 2, 2, 2,
-                                     6, 6, 6, 4, 4, 4, 2, 2, 2,], 
+                                    [6, 6, 6, 4, 2, 4, 2, 2, 2,
+                                     6, 6, 6, 4, 2, 4, 2, 2, 2,], 
                                     [8, 4], 
                                     ['N', 'N', 'quit']);
     $game->run();
