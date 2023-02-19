@@ -1,0 +1,51 @@
+use strict;
+use v5.10;
+use lib 'lib';
+
+use Test::More;
+use Illuminated::Game;
+
+my $game;
+
+diag("No strategy");
+$game = Illuminated::Game->standard_test();
+diag("Log file is: " . $game->log_name);
+
+
+my $p1 = $game->players->[0];
+my $p2 = $game->players->[1];
+my $csi = $game->foes->[7];
+my $delta = $game->foes->[4];
+diag("Palading gets close to csi with consequences, csi's aegis raised");
+$game->configure_scenario( [4, 4], [], ['C csi', 'quit'] );
+$game->run;
+is($game->get_distance($p1, $csi), 'close', $csi->name . " is close from " . $p1->name);
+is($csi->has_status('parry'), 1, $csi->name . " has parry" );
+diag("Templat gets close to delta without consequences.");
+diag("End turn action point wasted");
+$game->configure_scenario( [6], [0], ['C delta', 'quit'] );
+$game->run;
+diag("Uneffective slash of Paladin on csi with parry");
+$game->configure_scenario( [6, 6, 6], [0], ['A1', 'quit'] );
+$game->run;
+is($csi->health, 2, $csi->name . " untouched");
+is($csi->has_status('parry'), 0, $csi->name . " has no more parry" );
+diag("Templar try to fly away, command not available");
+diag("Templar smashing delta with sword");
+diag("End turn action point wasted");
+$game->configure_scenario( [6], [0, 0], ['F delta', 'A1', 'quit'] );
+$game->run;
+is($delta->health, 0, $delta->name . " took damage");
+is($delta->active, 0, $delta->name . " killed");
+diag("Paladin disengages with consequences, csi raises the aegis again");
+$game->configure_scenario( [4, 4, 4], [], ['D', 'quit'] );
+$game->run;
+is($game->get_distance($p1, $csi), 'near', $csi->name . " is near from " . $p1->name);
+is($csi->has_status('parry'), 1, $csi->name . " has parry" );
+
+is($game->random_dice_counter, 0, "No real dice");
+is($game->true_random_counter, 0, "No true random numbers");
+
+
+
+done_testing();
