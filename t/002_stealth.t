@@ -36,5 +36,8 @@ foreach my $f (@{$game->foes})
     is($game->get_distance($game->players->[0], $f), "far", $f->name . " far from " . $game->players->[0]->name);
 }
 
+is($game->random_dice_counter, 0, "No real dice");
+is($game->true_random_counter, 0, "No true random numbers");
+
 
 done_testing();

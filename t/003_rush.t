@@ -24,5 +24,8 @@ ok((! grep { $_->name eq 'gamma'} @{$game->foes}), "Gamma is dead");
 is($game->at_distance($game->players->[1], "close"), 1, "A foe close to " . $game->players->[1]->name);
 is($game->get_distance($game->players->[1], $game->get_foe('delta')), 'close', "Delta close to " . $game->players->[1]->name);
 
+is($game->random_dice_counter, 0, "No real dice");
+is($game->true_random_counter, 0, "No true random numbers");
+
 
 done_testing();

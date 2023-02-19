@@ -57,4 +57,7 @@ is($game->foes->[8]->aware, 1, $game->foes->[8]->name . " is aware"); #pi
 is($game->get_distance($p1, $game->foes->[8]), 'near', $game->foes->[8]->name . " is near from " . $p1->name);
 is($game->get_distance($p2, $game->foes->[8]), 'near', $game->foes->[8]->name . " is near from " . $p2->name);
 
+is($game->random_dice_counter, 0, "No real dice");
+is($game->true_random_counter, 0, "No true random numbers");
+
 done_testing();

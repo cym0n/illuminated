@@ -81,7 +81,15 @@ sub _standard_ia
             }
             else
             {
-                $target = $pls[$game->game_rand( $#pls )];
+                if(@pls == 1)
+                {
+                    $target = $pls[0];
+                }
+                else
+                {
+                    $game->log($self->name . " IA: Many targets available for command $command");
+                    $target = $pls[$game->game_rand( $#pls )];
+                }
                 $self->focus($target);
             }
             last;   

@@ -128,11 +128,19 @@ has loaded_dice_counter => (
     is => 'rw',
     default => 0
 );
+has random_dice_counter => (
+    is => 'rw',
+    default => 0
+);
 has fake_random => (
     is => 'rw',
     default => sub { [] }
 );
 has fake_random_counter => (
+    is => 'rw',
+    default => 0
+);
+has true_random_counter => (
     is => 'rw',
     default => 0
 );
@@ -549,8 +557,15 @@ sub at_distance
     }
     if($random && @out)
     {
-        my $pick = $out[$self->game_rand( @out )];
-        return ( $pick );
+        if(@out == 1)
+        {
+            return @out;
+        }
+        else
+        {
+            my $pick = $out[$self->game_rand( @out )];
+            return ( $pick );
+        }
     }
     else
     {
@@ -653,6 +668,7 @@ sub game_rand
     }
     else
     {
+        $self->true_random_counter($self->true_random_counter + 1);
         return int(rand $number);
     }
 
@@ -680,6 +696,7 @@ sub dice
         else
         {
             $throw = int(rand(6)) + 1;
+            $self->random_dice_counter($self->random_dice_counter + 1);
         }
         push @throws, $throw;
         $result = $throw if($throw > $result);

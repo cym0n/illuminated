@@ -30,7 +30,7 @@ is($game->get_distance($p2, $game->foes->[7]), 'far', $game->foes->[7]->name . "
 
 diag("Paladin disangages from iota with consequences");
 diag("Iota reaction: go far from Paladin");
-$game->configure_scenario( [4, 4, 4, 3], [], ['D', 'quit'] );
+$game->configure_scenario( [4, 4, 4, 3], [0], ['D', 'quit'] );
 $game->run;
 is($game->get_distance($p1, $game->foes->[6]), 'far', $game->foes->[6]->name . " is far from " . $p1->name);
 is($game->get_distance($p2, $game->foes->[6]), 'near', $game->foes->[6]->name . " is near from " . $p2->name);
@@ -43,6 +43,12 @@ $game->run;
 is($game->get_distance($p1, $game->foes->[3]), 'far', $game->foes->[3]->name . " is far from " . $p1->name);
 is($game->get_distance($p2, $game->foes->[3]), 'near', $game->foes->[3]->name . " is near from " . $p2->name);
 is($p2->health, 9, "Templar health is now 9");
+
+is($game->random_dice_counter, 0, "No real dice");
+is($game->true_random_counter, 0, "No true random numbers");
+
+is($game->random_dice_counter, 0, "No real dice");
+is($game->true_random_counter, 0, "No true random numbers");
 
 
 
