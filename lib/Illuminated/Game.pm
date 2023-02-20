@@ -572,41 +572,36 @@ sub at_distance
         return @out;
     }
 }
-sub harm_foe
+sub harm
 {
     my $self = shift;
-    my $attack_data = shift;
-    $self->calculate_effects('before harm foe', $attack_data);
-
-    $attack_data->{foe}->health($attack_data->{foe}->health - $attack_data->{damage});
-    $self->log($attack_data->{foe}->name . " gets " . $attack_data->{damage} . " damages");;
-    if($attack_data->{foe}->health <= 0)
-    {
-        $self->kill_foe($attack_data->{foe});
-    }
-    $self->calculate_effects('after harm foe', $attack_data);
-}
-sub harm_player
-{
-    my $self = shift;
-    my $target = shift;
+    my $attacker = shift;
+    my $defender = shift;
     my $damage = shift;
-    $target->health($target->health - 1);
-    $self->log($target->name . " receives $damage damages. " . $target->name . "'s health is now " . $target->health);
-    if($target->health <= 0)
+
+    $defender->harm($damage);
+
+    $self->log($defender->name . " gets " . $damage . " damages");;
+    if($defender->health <= 0)
     {
-        $self->log($target->name . " killed!");
-        @{$self->players} = grep { $_->tag ne $target->tag } @{$self->players};
+        $self->kill($defender);
     }
 }
-sub kill_foe
+sub kill
 {
     my $self = shift;
-    my $f = shift;
-    $f->health(0);
-    $f->active(0);
-    $self->log($f->name . " killed!");
-    @{$self->foes} = grep { $_->tag ne $f->tag}  @{$self->foes};
+    my $s = shift;
+    $s->health(0);
+    $s->active(0);
+    $self->log($s->name . " killed!");
+    if(ref($s) eq 'Illuminated::Stand::Foe')
+    {
+        @{$self->foes} = grep { $_->tag ne $s->tag}  @{$self->foes};
+    }
+    elsif(ref($s) eq 'Illuminated::Stand::Player')
+    {
+        @{$self->players} = grep { $_->tag ne $s->tag } @{$self->players};
+    }
 }
 
 sub aware_foe
@@ -680,6 +675,7 @@ sub dice
     my $self = shift;
     my $many = shift;
     my $silent = shift;
+    my $mods = shift;
     my $sides = 6;
     my $result = 0;
     my @throws = ();
@@ -734,7 +730,7 @@ sub execute_foe
     elsif($command eq 'attack')
     {
         $self->log($foe->name . " deals 1 damage to " . $target->name . "!");
-        $self->harm_player($target, 1);
+        $self->harm($foe, $target, 1);
     }
     elsif($command eq 'pursuit')
     {
@@ -805,15 +801,10 @@ sub calculate_effects
     my $self = shift;
     my $event = shift;
     my $data = shift;
-    my @triggering;
-    if( $event eq 'before harm foe' ||
-        $event eq 'after harm foe'     )
+    my @triggering = ($data->{subject_2}, $data->{weapon}, $data->{subject_1});
+    foreach my $t (@triggering)
     {
-        @triggering = ($data->{foe}, $data->{weapon}, $data->{attacker});
-    }
-    for(@triggering)
-    {
-        $_->calculate_effects($self, $event, $data);
+        $t->calculate_effects($self, $event, $data) if $t;
     }
 }
 sub activate_foe_weapon
@@ -967,6 +958,8 @@ sub attack_foe
     my $answer = shift;
     my $foe = undef;
 
+    #CHECKS
+
     my $w = $self->active_player->get_weapon($self->interface_weapons->{$answer});
 
     my $combat_type = undef;
@@ -983,29 +976,37 @@ sub attack_foe
         $combat_type = 'close';
     }
     if(! $w->good_for_range($self->get_distance($self->active_player, $foe))) { $self->log("Distance not suitable"); return 0 };
-    
-    $self->log("Attacking " . $foe->name . " with " . $w->name . " (" . $w->try_type . " try)");
-    my $try = $w->try_type;
-    my $damage = $w->damage;
-    my $throw = $self->dice($self->active_player->$try);
-    my %attack_data = (
-        attacker => $self->active_player,
-        weapon => $w,
-        foe => $foe,
-        damage => $damage,
-        throw => $throw 
-    );
 
+    $self->log("Attacking " . $foe->name . " with " . $w->name . " (" . $w->try_type . " try)");
+
+    #ACTION MATRIX
+
+    my $attack_data = {
+        subject_1 => $self->active_player,
+        weapon => $w,
+        subject_2 => $foe,
+        damage => $w->damage,
+        dice_mods => []
+    };
+
+    $self->calculate_effects("dice attack", $attack_data);
+    
+    my $try = $w->try_type;
+    my $throw = $self->dice($self->active_player->$try, 0, $attack_data->{dice_mods});
 
     if($throw >= 5)
     {
         $self->log("Successful attack!");
-        $self->harm_foe(\%attack_data);
+        $self->calculate_effects("before attack", $attack_data);
+        $self->harm($attack_data->{subject_1}, $attack_data->{subject_2}, $attack_data->{damage});
+        $self->calculate_effects("after attack", $attack_data);
     }
     elsif($throw >= 3)
     {
         $self->log("Successful attack with consequences!");
-        $self->harm_foe(\%attack_data);
+        $self->calculate_effects("before attack", $attack_data);
+        $self->harm($attack_data->{subject_1}, $attack_data->{subject_2}, $attack_data->{damage});
+        $self->calculate_effects("after attack", $attack_data);
         $self->assign_action_point($foe);
     }
     else

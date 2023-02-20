@@ -91,7 +91,7 @@ sub gate_run
             {
                 $game->log("Enemy killed by surprise! Close to a second enemy. All enemies aware!");
                 my $f = $game->get_foe(undef);
-                $game->kill_foe($f);
+                $game->kill($f);
             }
             else
             {

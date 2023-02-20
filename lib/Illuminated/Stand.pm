@@ -62,10 +62,6 @@ sub get_weapon
     return undef
 }
 
-sub calculate_effects
-{
-}
-
 sub has_status
 {
     my $self = shift;
@@ -87,6 +83,34 @@ sub deactivate_status
     my $self = shift;
     my $s = shift;
     @{$self->status} = grep { $_ ne $s} @{$self->status};
+}
+
+sub harm
+{
+    my $self = shift;
+    my $damage = shift;
+    $self->health($self->health - $damage);
+    $self->health(0) if $self->health < 0;
+}
+
+sub calculate_effects
+{
+    my $self = shift;
+    my $game = shift;
+    my $event = shift;
+    my $data = shift;
+    
+    $game->log("Stand processing event: $event");
+
+    if($event eq 'before attack')
+    {
+        if($data->{subject_2}->tag eq $self->tag && $data->{weapon}->type eq 'sword' && $self->has_status('parry'))
+        {
+            $game->log($self->name . " null damage from " . $data->{subject_1}->name . " and lose parry");
+            $self->deactivate_status('parry');
+            $data->{damage} = 0;
+        }
+    }
 }
 
 
