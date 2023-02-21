@@ -17,7 +17,7 @@ sub thug
 {
     my $self = shift;
     my $game = shift;
-    if($game->unaware_foe())
+    if($game->unaware_foe() && ! $self->has_status('jammed'))
     {
         my $throw = $game->dice(1, 1);
         return ('warn', undef) if($throw < 3);
@@ -31,7 +31,7 @@ sub gunner
 {
     my $self = shift;
     my $game = shift;
-    if($game->unaware_foe())
+    if($game->unaware_foe() && ! $self->has_status('jammed'))
     {
         my $throw = $game->dice(1, 1);
         return ('warn', undef) if($throw < 3);
