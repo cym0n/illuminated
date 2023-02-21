@@ -198,9 +198,6 @@ sub configure_scenario
 sub standard_test
 {
     my $package = shift;
-    my $loaded_dice = shift;
-    my $fake_random = shift;
-    my $auto_commands = shift;
 
     my $game = $package->init_test('standard_game', 
                                     [6, 6, 6, 4, 2, 4, 2, 2, 2,
@@ -208,7 +205,7 @@ sub standard_test
                                     [8, 4], 
                                     ['N', 'N', 'quit']);
     $game->run();
-    $game->configure_scenario($loaded_dice, $fake_random, $auto_commands);
+    $game->log("========== STANDARD TEST GENERATION ENDED ==============");
     return $game;
 }
 
@@ -299,6 +296,7 @@ sub run
                 $self->assign_action_point();
                 $self->foes_turn();
                 $self->end_condition(); 
+                $self->clock();
                 $self->reset_player_counter();
             }
         }
@@ -333,6 +331,7 @@ sub standard_commands
     elsif($answer =~ /^P\d+$/)
     {
         $self->use_device($answer, $arg);
+        return 0; #Device use doesn't imply end of turn
     }
     elsif($answer eq 'D')
     {
@@ -669,13 +668,13 @@ sub game_rand
     my $self = shift;
     my @input = @_;
     my $number = undef;
-    if($#input == 1)
+    if($#input == 0)
     { 
         $number = $input[0];
     }
     else
     {
-        $number = $#input;
+        $number = @input;
     }
     $self->file_only("Random evoked, range $number");
     if(exists $self->fake_random->[$self->fake_random_counter])
@@ -843,6 +842,19 @@ sub activate_foe_weapon
     }
 }
 
+sub clock
+{
+    my $self = shift;
+    foreach my $p (@{$self->players})
+    {
+        $p->counters_clock($self);
+    }
+    foreach my $f (@{$self->foes})
+    {
+        $f->counters_clock($self);
+    }
+}
+
 ### Combat commands
 
 sub situation
@@ -864,7 +876,7 @@ sub situation
         $p = $self->active_player;
     }
     print "\n";
-    $self->log($p->name . ": HEALTH " . $p->health);
+    $self->log($p->name . ": HEALTH " . $p->health . ", ENERGY " . $p->energy);
     print "\n";
     foreach my $f (@{$self->foes})
     {
