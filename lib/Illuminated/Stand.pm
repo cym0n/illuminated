@@ -12,6 +12,9 @@ has type => (
 has health => (
     is => 'rw'
 );
+has energy => (
+    is => 'rw'
+);
 has active => (
     is => 'rw',
     default => 1
@@ -28,9 +31,17 @@ has weapons => (
     is => 'ro',
     default => sub { [] }
 );
+has devices => (
+    is => 'ro',
+    default => sub { [] }
+);
 has status => (
     is => 'rw',
     default => sub { [] }
+);
+has status_counter => (
+    is => 'ro',
+    default => sub { {} }
 );
 
 sub add_weapon
@@ -38,6 +49,13 @@ sub add_weapon
     my $self = shift;
     my $weapon = shift;
     push @{$self->weapons}, $weapon;
+}
+
+sub add_device
+{
+    my $self = shift;
+    my $device = shift;
+    push @{$self->devices}, $device;
 }
 
 sub get_weapons_by_range
@@ -61,6 +79,17 @@ sub get_weapon
     }
     return undef
 }
+sub get_device
+{
+    my $self = shift;
+    my $name = shift;
+    foreach my $d (@{$self->devices})
+    {
+        return $d if $d->name eq $name;
+    }
+    return undef
+}
+
 
 sub has_status
 {
@@ -73,9 +102,21 @@ sub activate_status
 {
     my $self = shift;
     my $s = shift;
+    my $counter = shift;
     if(! $self->has_status($s))
     {
         push @{$self->status}, $s;
+    }
+    if($counter)
+    {
+        if(defined $self->status_counter->{$s})
+        {
+            $self->status_counter->{$s} = $self->status_counter->{$s} + $counter;
+        }
+        else
+        {
+            $self->status_counter->{$s} = $counter;
+        }
     }
 }
 sub deactivate_status
@@ -84,6 +125,23 @@ sub deactivate_status
     my $s = shift;
     @{$self->status} = grep { $_ ne $s} @{$self->status};
 }
+sub counters_clock
+{
+    my $self = shift;
+    my $game = shift;
+    foreach my $s (keys %{$self->status_counter})
+    {
+        if($self->status_counter->{$s} > 0)
+        {
+            $self->status_counter->{$s} = $self->status_counter->{$s} - 1;
+            if($self->status_counter->{$s} == 0)
+            {
+                $game->log($self->name . ": status $s expired!");
+                $self->deactivate_status($s);
+            }
+        }
+    }
+}
 
 sub harm
 {
@@ -91,6 +149,13 @@ sub harm
     my $damage = shift;
     $self->health($self->health - $damage);
     $self->health(0) if $self->health < 0;
+}
+
+sub use_energy
+{
+    my $self = shift;
+    my $energy = shift;
+    $self->energy($self->energy - $energy);
 }
 
 sub calculate_effects

@@ -4,6 +4,7 @@ use v5.10;
 use Moo;
 use Data::Dumper;
 use Illuminated::Weapon;
+use Illuminated::Device::Jammer;
 use Illuminated::Stand::Player;
 use Illuminated::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
@@ -26,12 +27,14 @@ has player_templates => (
     default => sub { {
         'Maverick' => {
             health => 10,
+            energy => 5,
             power => 3,
             speed => 2,
             mind => 1,
         },
         'Tesla' => {
             health => 10,
+            energy => 5,
             power => 1,
             speed => 1,
             mind => 3,
@@ -80,6 +83,10 @@ has interface_options => (
     ] }
 );
 has interface_weapons => (
+    is => 'rw',
+    default => sub { {} }
+);
+has interface_devices => (
     is => 'rw',
     default => sub { {} }
 );
@@ -213,6 +220,7 @@ sub standard_game
     $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
+    $player->add_device(Illuminated::Device::Jammer->new());
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
     $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
@@ -322,6 +330,10 @@ sub standard_commands
         $self->attack_foe($answer, $arg);
         return 1;
     }
+    elsif($answer =~ /^P\d+$/)
+    {
+        $self->use_device($answer, $arg);
+    }
     elsif($answer eq 'D')
     {
         $self->disengage();
@@ -367,6 +379,7 @@ sub interface_preconditions
     my %already = ();
     my $i = 1;
     my %weapons_mapping = ();
+    my %devices_mapping = ();
     foreach my $d (@ranges)
     {
         if($game->at_distance($game->active_player, $d))
@@ -376,15 +389,26 @@ sub interface_preconditions
             {
                 if(! exists $already{$w->name})
                 {
-                    push @options, ['^(A1)( (.*))?$', "[A" . $i . "]ttack enemy with " . $w->name . " (" . $w->try_type . " try)"];
+                    push @options, ['^(A' . $i. ')( (.*))?$', "[A" . $i . "]ttack enemy with " . $w->name . " (" . $w->try_type . " try)"];
                     $weapons_mapping{'A' . $i} = $w->name;
                     $i++
                 }
             }
         }
     }
+    $i = 1;
+    foreach my $d(@{$self->active_player->devices})
+    {
+        if($d->preconditions($self, $self->active_player))
+        {
+            push @options, ['^(P' . $i. ')( (.*))?$', "[P" . $i . "]ower: " . $d->name];
+            $devices_mapping{'P' . $i} = $d->name;
+            $i++;
+        }
+    }
     $game->interface_options(\@options);
     $game->interface_weapons(\%weapons_mapping);
+    $game->interface_devices(\%devices_mapping);
 }
 
 sub add_player
@@ -1014,6 +1038,17 @@ sub attack_foe
         $self->log("Attack failed!");
         $self->assign_action_point($foe);
     }
+    return 1;
+}
+
+sub use_device
+{
+    my $self = shift;
+    my $answer = shift;
+    my $arg = shift;
+    my $d = $self->active_player->get_device($self->interface_devices->{$answer});
+    $self->active_player->use_energy($d->energy_usage);
+    $d->action($self, $self->active_player, undef);
     return 1;
 }
 
