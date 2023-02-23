@@ -18,6 +18,7 @@ sub preconditions
     my $self = shift;
     my $game = shift;
     my $subject = shift;
+    my $args = shift;
     return 0 if $subject->energy < $self->energy_usage;
     return 1;
 }

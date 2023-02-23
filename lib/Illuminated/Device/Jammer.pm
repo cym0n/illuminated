@@ -19,9 +19,10 @@ around preconditions => sub {
     my $self = shift;
     my $game = shift;
     my $subject = shift;
+    my $arg = shift;
     if($game->aware_foe())
     {
-        return $self->$orig($game, $subject);
+        return $self->$orig($game, $subject, $arg);
     }
 };
 

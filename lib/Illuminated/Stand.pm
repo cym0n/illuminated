@@ -83,6 +83,7 @@ sub get_device
 {
     my $self = shift;
     my $name = shift;
+    return undef if ! $name;
     foreach my $d (@{$self->devices})
     {
         return $d if $d->name eq $name;
@@ -165,7 +166,7 @@ sub calculate_effects
     my $event = shift;
     my $data = shift;
     
-    $game->log("Stand processing event: $event");
+    #$game->log("Stand " . $self->name . " processing event: $event");
 
     if($event eq 'before attack')
     {

@@ -857,6 +857,16 @@ sub activate_foe_weapon
     }
 }
 
+sub device
+{
+    my $self = shift;
+    my $subject = shift;
+    my $d = shift;
+    my $arg = shift;
+    $subject->use_energy($d->energy_usage);
+    $d->action($self, $subject, $arg);
+}
+
 sub clock
 {
     my $self = shift;
@@ -1037,6 +1047,7 @@ sub disengage
         command => 'disengage',
         call => 'play_move',
     };
+
     #Action
     my $outcome = $self->play_command($data);
 
@@ -1063,10 +1074,8 @@ sub attack_foe
     my $answer = shift;
     my $foe = undef;
 
-    #CHECKS
-
+    #Precoditions
     my $w = $self->active_player->get_weapon($self->interface_weapons->{$answer});
-
     my $combat_type = undef;
     ( $foe ) = $self->at_distance($self->active_player, 'close', 1);
     if(! $foe)
@@ -1082,39 +1091,34 @@ sub attack_foe
     }
     if(! $w->good_for_range($self->get_distance($self->active_player, $foe))) { $self->log("Distance not suitable"); return 0 };
 
+    #Announcement
     $self->log("Attacking " . $foe->name . " with " . $w->name . " (" . $w->try_type . " try)");
-
-    #ACTION MATRIX
-
-    my $attack_data = {
+    
+    #Data
+    my $data = {
         subject_1 => $self->active_player,
-        weapon => $w,
         subject_2 => $foe,
+        combat_type => $combat_type,
+        try_type => $w->try_type,
+        command => 'attack',
+        weapon => $w,
         damage => $w->damage,
-        dice_mods => []
+        call => 'play_harm',
     };
 
-    $self->calculate_effects("dice attack", $attack_data);
-    
-    my $try = $w->try_type;
-    my $throw = $self->dice($self->active_player->$try, 0, $attack_data->{dice_mods});
+    #Action
+    my $outcome = $self->play_command($data);
 
-    if($throw >= 5)
+    if($outcome == 2)
     {
         $self->log("Successful attack!");
-        $self->calculate_effects("before attack", $attack_data);
-        $self->harm($attack_data->{subject_1}, $attack_data->{subject_2}, $attack_data->{damage});
-        $self->calculate_effects("after attack", $attack_data);
     }
-    elsif($throw >= 3)
+    elsif($outcome == 1)
     {
         $self->log("Successful attack with consequences!");
-        $self->calculate_effects("before attack", $attack_data);
-        $self->harm($attack_data->{subject_1}, $attack_data->{subject_2}, $attack_data->{damage});
-        $self->calculate_effects("after attack", $attack_data);
         $self->assign_action_point($foe);
     }
-    else
+    elsif($outcome == 0)
     {
         $self->log("Attack failed!");
         $self->assign_action_point($foe);
@@ -1127,9 +1131,30 @@ sub use_device
     my $self = shift;
     my $answer = shift;
     my $arg = shift;
+
+    #Preconditions
     my $d = $self->active_player->get_device($self->interface_devices->{$answer});
-    $self->active_player->use_energy($d->energy_usage);
-    $d->action($self, $self->active_player, undef);
+    if(! $d) { $self->log("$answer not mapped on suitable device"); return 0 }
+    if(! $d->preconditions($self, $self->active_player, $arg)) { $self->log($d->name . " cannot be used"); return 0 }; 
+
+    #Announcement
+    $self->log("Using " . $d->name);
+
+    #Data
+    my $data = {
+        subject_1 => $self->active_player,
+        arg => $arg, #Too generic to be reduced to foe
+        try_type => undef, #Always success
+        device => $d,
+        command => 'device',
+        call => 'play_device',
+    };
+    
+    #Action
+    my $outcome = $self->play_command($data);
+    
+    #No need to check outcome, always 2
+
     return 1;
 }
 
@@ -1210,6 +1235,20 @@ sub play_move
     {
         $self->move($data->{subject_1}, $data->{subject_2}, $data->{direction});
     }
+}
+
+sub play_harm
+{
+    my $self = shift;
+    my $data = shift;
+    $self->harm($data->{subject_1}, $data->{subject_2}, $data->{damage});
+}
+
+sub play_device
+{
+    my $self = shift;
+    my $data = shift;
+    $self->device($data->{subject_1}, $data->{device}, $data->{arg});
 }
 
 1;
