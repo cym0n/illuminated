@@ -737,6 +737,7 @@ sub execute_foe
     my $command = shift;
     my $target = shift;
 
+    my $data = undef;
     if($command eq 'warn')
     {
         my @unw = $self->unaware_foe();
@@ -748,23 +749,51 @@ sub execute_foe
     elsif($command eq 'away')
     {
         $self->log($foe->name . " steps away from " . $target->name . "!");
-        $self->move($target, $foe, 'farther');
+        $data = {
+            subject_1 => $foe,
+            subject_2 => $target,
+            direction => 'farther',
+            try_type => undef,
+            command => 'fly_closer',
+            call => 'play_move',
+        };
     }
     elsif($command eq 'attack')
     {
         $self->log($foe->name . " deals 1 damage to " . $target->name . "!");
         $self->harm($foe, $target, 1);
+        # my $data = {
+        #     subject_1 => $foe,
+        #     subject_2 => $target,
+        #     try_type => undef,
+        #     command => 'attack',
+        #     weapon => $w,
+        #     damage => $w->damage,
+        #     call => 'play_harm',
+        # };
     }
     elsif($command eq 'pursuit')
     {
         $self->log($foe->name . " flyes to the " . $target->name . "!");
-        $self->move($target, $foe, 'closer');
+        $data = {
+            subject_1 => $foe,
+            subject_2 => $target,
+            direction => 'closer',
+            try_type => undef,
+            command => 'fly_closer',
+            call => 'play_move',
+        };
     }
     elsif($command eq 'parry')
     {
         $self->log($foe->name . " raises the aegis");
         $self->activate_foe_weapon($foe, $foe->get_weapon('aegis'), $target);
     }
+    if($data)
+    {
+        $self->play_command($data);
+    }
+
 }
 sub assign_action_point
 {
