@@ -824,7 +824,22 @@ sub calculate_effects
     my $self = shift;
     my $event = shift;
     my $data = shift;
-    my @triggering = ($data->{subject_2}, $data->{weapon}, $data->{subject_1});
+
+    my @targets = ();
+
+    if($data->{subject_2})
+    {
+        if(ref($data->{subject_2}) eq 'ARRAY')
+        {
+            @targets = @{$data->{subject_2}};
+        }
+        else
+        {
+            @targets = ( $data->{subject_2} );
+        }
+    }
+
+    my @triggering = (@targets, $data->{weapon}, $data->{subject_1});
     foreach my $t (@triggering)
     {
         $t->calculate_effects($self, $event, $data) if $t;
@@ -890,27 +905,41 @@ sub fly_closer
 {
     my $self = shift;
     my $fname = shift;
+
+    #Preconditions
     my $foe = $self->get_foe($fname);
     if(! $foe) { $self->log("$fname doesn't exists or is inactive"); return 0 }
     if(! $foe->aware) { $self->log("$fname " . $foe->aware_text); return 0 }
     my ( $cl ) = $self->at_distance($foe, 'close', 1);
     if($cl && $self->get_distance($self->active_player, $foe) eq 'near') { $self->log("$fname already close to " . $cl->name); return 0}
+
+    #Data
+    my $data = {
+        subject_1 => $self->active_player,
+        subject_2 => $foe,
+        direction => 'closer',
+        try_type => 'speed',
+        command => 'fly_closer',
+        call => 'play_move',
+    };
+
+    #Announcement
     $self->log("Flying closer to $fname (speed try)");
-    my $throw = $self->dice($self->active_player->speed);
-    if($throw >= 5)
+
+    #Action
+    my $outcome = $self->play_command($data);
+    if($outcome == 2)
     {
-        $self->log("Successfull approach");
-        $self->move($self->active_player, $foe, 'closer');
+        $self->log("Successful approach");
         $self->log($foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name); 
     }
-    elsif($throw >= 3)
+    elsif($outcome == 1)
     {
-        $self->log("Successfull approach with consequences");
-        $self->move($self->active_player, $foe, 'closer');
+        $self->log("Successful approach with consequences");
         $self->log($foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name);
         $self->assign_action_point($foe);
     }
-    else
+    elsif($outcome == 0)
     {
         $self->log("Failed to approach!");
         $self->assign_action_point($foe);
@@ -923,6 +952,8 @@ sub fly_away
     my $self = shift;
     my $who = shift;
     my @targets;
+
+    #Preconditions and announcement
     if(lc($who) eq '_all')
     {
         if(! $self->at_distance($self->active_player, 'near')) { $self->log("Nobody is near"); return 0 }
@@ -937,45 +968,43 @@ sub fly_away
         $self->log("Flying away from $who (speed try)");
         @targets = ( $f );
     }
-    my $throw = $self->dice($self->active_player->speed);
-    if($throw >= 5)
+
+    #Data
+    my $data = {
+        subject_1 => $self->active_player,
+        subject_2 => \@targets,
+        direction => 'farther',
+        try_type => 'speed',
+        command => 'fly_away',
+        call => 'play_move',
+    };
+
+    #Action
+    my $outcome = $self->play_command($data);
+    if($outcome == 2)
     {
         $self->log("Successfully escaped!");
         foreach my $f ( @targets )
         {
-            $self->move($self->active_player, $f, 'farther');
             $self->log($f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name); 
         }
     }
-    elsif($throw >= 3)
+    elsif($outcome == 1)
     {
         $self->log("Uncomplete escape! Rolling enemies one by one");
         foreach my $f ( @targets )
         {
             my $d = $self->get_distance($self->active_player, $f);
-            if($d ne 'far' && $d ne 'none')
-            { 
-                my $throw = $self->dice(1);
-                if($throw >= 5)
-                {
-                    $self->move($self->active_player, $f, 'farther');
-                    $self->log($f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name); 
-                }
-                elsif($throw >= 3)
-                {
-                    $self->log($f->name . " still $d for " . $self->active_player->name)
-                }
-                else
-                {
-                    $self->log($f->name . " still $d for " . $self->active_player->name . " with consequences");
-                    $self->assign_action_point($f);
-                }
+            $self->log($f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name); 
+            if($f->action_points > 0)
+            {
+                $self->log($f->name . " has " . $f->action_points . " action points");
             }
         }
     }
-    else
+    elsif($outcome == 0)
     {
-        $self->log("Failed to escape!");
+        $self->log("Failed to escape! (all enemies gain an action point");
         foreach my $f ( @targets )
         {
             my $d = $self->get_distance($self->active_player, $f);
@@ -984,6 +1013,46 @@ sub fly_away
                 $self->assign_action_point($f);
             }
         }
+    }
+    return 1;
+}
+
+sub disengage
+{
+    my $self = shift;
+
+    #Preconditions
+    my ( $foe ) = $self->at_distance($self->active_player, 'close', 1);
+    if(! $foe) { $self->log("Nobody close to " . $self->active_player->name); return 0 };
+    
+    #Announcement
+    $self->log("Disengaging from " . $foe->name . " (power try)");
+
+    #data
+    my $data = {
+        subject_1 => $self->active_player,
+        subject_2 => $foe,
+        direction => 'farther',
+        try_type => 'speed',
+        command => 'disengage',
+        call => 'play_move',
+    };
+    #Action
+    my $outcome = $self->play_command($data);
+
+    if($outcome == 2)
+    {
+        $self->log("Successfully disengaged!");
+        $self->move($self->active_player, $foe, 'farther');
+    }
+    elsif($outcome == 1)
+    {
+        $self->log("Disengaged with consequences");
+        $self->assign_action_point($foe);
+    }
+    elsif($outcome == 0)
+    {
+        $self->log("Disengaging failed!");
     }
     return 1;
 }
@@ -1064,31 +1133,83 @@ sub use_device
     return 1;
 }
 
-sub disengage
+
+
+# Commands support subs
+
+sub play_command
 {
     my $self = shift;
-    my ( $foe ) = $self->at_distance($self->active_player, 'close', 1);
-    if(! $foe) { $self->log("Nobody close to " . $self->active_player->name); return 0 };
-    $self->log("Disengaging from " . $foe->name . " (power try)");
-    my $throw = $self->dice($self->active_player->power);
-    if($throw >= 5)
+    my $data = shift;
+
+    my $throw = undef;
+    if($data->{try_type})
     {
-        $self->log("Successfully disengaged!");
-        $self->move($self->active_player, $foe, 'farther');
+        my $try = $data->{try_type};
+        $self->calculate_effects("dice " . $data->{command}, $data);
+        $throw = $self->dice($data->{subject_1}->$try, 0, $data->{dice_mods});
     }
-    elsif($throw >= 3)
+    my $outcome;
+    if( (defined $throw && $throw >= 5) || (! defined $throw))
     {
-        $self->log("Disengaged with consequences");
-        $self->move($self->active_player, $foe, 'farther');
-        $self->assign_action_point($foe);
+        $outcome = 2; #success
+    }
+    elsif( defined $throw && $throw >= 3)
+    {
+        $outcome = 1; #success with consequences
     }
     else
     {
-        $self->log("Disengaging failed!");
-        $self->assign_action_point($foe);
+        return 0; #failure
     }
-    return 1;
+    $data->{outcome} = $outcome;
+    $self->calculate_effects("before " . $data->{command}, $data);
+    my $call = $data->{call};
+    $self->$call($data);
+    $self->calculate_effects("after " . $data->{command}, $data);
+    return $outcome;
 }
 
+sub play_move
+{
+    my $self = shift;
+    my $data = shift;
+    if(ref($data->{subject_2}) eq 'ARRAY')
+    {
+        if($data->{direction} eq 'farther')
+        {
+            foreach my $f ( @{$data->{subject_2}} )
+            {
+                my $d = $self->get_distance($data->{subject_1}, $f);
+                if($d ne 'far' && $d ne 'none')
+                { 
+                    if($data->{'outcome'} == 2)
+                    {
+                        $self->move($data->{subject_1}, $f, 'farther');
+                    }
+                    else
+                    {
+                        my $throw = $self->dice(1);
+                        if($throw >= 5)
+                        {
+                            $self->move($data->{subject_1}, $f, 'farther');
+                        }
+                        elsif($throw >= 3)
+                        {
+                        }
+                        else
+                        {
+                            $self->assign_action_point($f);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        $self->move($data->{subject_1}, $data->{subject_2}, $data->{direction});
+    }
+}
 
 1;
