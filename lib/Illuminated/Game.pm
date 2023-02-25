@@ -444,28 +444,11 @@ sub get_player
 sub add_foe
 {
     my $self = shift;
-
-    my $f = undef;
     my $name = shift;
-    my $type = shift;
-    my $weapons = shift;
-    if($type eq 'thug')
-    {
-        $f = Illuminated::Stand::Foe::Thug->new($name);
-        $self->log($f->name . " added as subclass, tag is " . $f->tag);
-        for(@{$f->weapons})
-        {
-            $self->log("Armed with " . $_->name);
-        }
-    }
-    else
-    {
-        $f = Illuminated::Stand::Foe->new({ name => $name, type => $type, health => $self->foe_templates->{$type}->{health} });
-        for(@{$weapons})
-        {
-            $f->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{$_}));
-        }
-    }
+    my $foe_package = shift;
+    eval("require $foe_package");
+    die $@ if $@;
+    my $f = $foe_package->new($name);
     push @{$self->foes}, $f;
     foreach(@{$self->players})
     {

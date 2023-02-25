@@ -29,7 +29,7 @@ sub init_foes
     my $game = shift;
     foreach my $f (@{$self->foes})
     {
-        $game->add_foe($f->[0], $f->[1], $f->[2])
+        $game->add_foe($f->[0], $f->[1])
     }
 }
 sub setup_foe

@@ -20,15 +20,15 @@ has interface_options => (
 );
 has foes => (
     is => 'ro',
-    default => sub { [ [ 'alpha',   'thug',      [ 'balthazar']        ],
-                       [ 'beta',    'thug',      [ 'balthazar']        ],
-                       [ 'gamma',   'thug',      [ 'balthazar']        ],
-                       [ 'epsilon', 'thug',      [ 'balthazar']        ],
-                       [ 'delta',   'thug',      [ 'balthazar']        ],
-                       [ 'ro',      'gunner',    [ 'reiter' ]          ],
-                       [ 'iota',    'gunner',    [ 'reiter' ]          ],
-                       [ 'csi',     'gladiator', [ 'caliban', 'aegis' ] ],
-                       [ 'pi',      'gladiator', [ 'caliban', 'aegis' ] ],
+    default => sub { [ [ 'alpha',   'Illuminated::Stand::Foe::Thug' ],
+                       [ 'beta',    'Illuminated::Stand::Foe::Thug' ],
+                       [ 'gamma',   'Illuminated::Stand::Foe::Thug' ],
+                       [ 'epsilon', 'Illuminated::Stand::Foe::Thug' ],
+                       [ 'delta',   'Illuminated::Stand::Foe::Thug' ],
+                       [ 'ro',      'Illuminated::Stand::Foe::Gunner' ],
+                       [ 'iota',    'Illuminated::Stand::Foe::Gunner' ],
+                       [ 'csi',     'Illuminated::Stand::Foe::Gladiator' ],
+                       [ 'pi',      'Illuminated::Stand::Foe::Gladiator' ],
                      ] }
 );
 
