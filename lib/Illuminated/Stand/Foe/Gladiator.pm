@@ -23,5 +23,18 @@ sub BUILD {
     $self->add_weapon(Illuminated::Weapon::Aegis->new());
 };
 
+sub strategy
+{
+    my $self = shift;
+    my $game = shift;
+    if(! $self->has_status('parry'))
+    {
+        return ('parry', undef);
+    }
+    return $self->_standard_ia($game, { 'close' => 'attack',
+                                        'near'  => 'pursuit',
+                                        'far'   => 'pursuit' });
+}
+
 1;
 

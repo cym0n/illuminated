@@ -57,4 +57,14 @@ sub description
     return $desc;
 }
 
+sub strategy
+{
+    my $self = shift;
+    my $game = shift;
+    return $self->_standard_ia($game, { 'close' => 'away',
+                                        'near'  => 'away',
+                                        'far'   => 'away' });
+    
+}
+
 1;

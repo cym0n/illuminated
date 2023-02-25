@@ -4,54 +4,15 @@ use strict;
 use v5.10;
 use Moo::Role;
 
+requires 'strategy';
+
 sub ia
 {
     my $self = shift;
     my $game = shift;
     my $call = $self->type;
-    my ($command, $target) = $self->$call($game);
+    my ($command, $target) = $self->strategy($game);
     $game->execute_foe($self, $command, $target);
-}
-
-sub thug
-{
-    my $self = shift;
-    my $game = shift;
-    if($game->unaware_foe() && ! $self->has_status('jammed'))
-    {
-        my $throw = $game->dice(1, 1);
-        return ('warn', undef) if($throw < 3);
-    }
-    return $self->_standard_ia($game, { 'close' => 'away',
-                                        'near'  => 'attack',
-                                        'far'   => 'pursuit' });
-}
-
-sub gunner
-{
-    my $self = shift;
-    my $game = shift;
-    if($game->unaware_foe() && ! $self->has_status('jammed'))
-    {
-        my $throw = $game->dice(1, 1);
-        return ('warn', undef) if($throw < 3);
-    }
-    return $self->_standard_ia($game, { 'close' => 'away',
-                                        'near'  => 'away',
-                                        'far'   => 'attack' });
-}
-
-sub gladiator
-{
-    my $self = shift;
-    my $game = shift;
-    if(! $self->has_status('parry'))
-    {
-        return ('parry', undef);
-    }
-    return $self->_standard_ia($game, { 'close' => 'attack',
-                                        'near'  => 'pursuit',
-                                        'far'   => 'pursuit' });
 }
 
 sub _standard_ia
