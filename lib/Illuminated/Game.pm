@@ -9,6 +9,7 @@ use Illuminated::Weapon::Caliban;
 use Illuminated::Device::Jammer;
 use Illuminated::Stand::Player;
 use Illuminated::Stand::Foe;
+use Illuminated::Stand::Foe::Thug;
 use Illuminated::Tile::GuardedSpace;
 
 
@@ -448,11 +449,22 @@ sub add_foe
     my $name = shift;
     my $type = shift;
     my $weapons = shift;
-
-    $f = Illuminated::Stand::Foe->new({ name => $name, type => $type, health => $self->foe_templates->{$type}->{health} });
-    for(@{$weapons})
+    if($type eq 'thug')
     {
-        $f->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{$_}));
+        $f = Illuminated::Stand::Foe::Thug->new($name);
+        $self->log($f->name . " added as subclass, tag is " . $f->tag);
+        for(@{$f->weapons})
+        {
+            $self->log("Armed with " . $_->name);
+        }
+    }
+    else
+    {
+        $f = Illuminated::Stand::Foe->new({ name => $name, type => $type, health => $self->foe_templates->{$type}->{health} });
+        for(@{$weapons})
+        {
+            $f->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{$_}));
+        }
     }
     push @{$self->foes}, $f;
     foreach(@{$self->players})
@@ -490,7 +502,7 @@ sub detect_player_foe
         $player = $a;
         $foe = $b;
     }
-    elsif(ref($a) eq 'Illuminated::Stand::Foe')
+    elsif(ref($a) =~ /^Illuminated::Stand::Foe/)
     {
         $player = $b;
         $foe = $a;
@@ -620,7 +632,7 @@ sub kill
     $s->health(0);
     $s->active(0);
     $self->log($s->name . " killed!");
-    if(ref($s) eq 'Illuminated::Stand::Foe')
+    if(ref($s) =~ /^Illuminated::Stand::Foe/)
     {
         @{$self->foes} = grep { $_->tag ne $s->tag}  @{$self->foes};
     }

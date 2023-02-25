@@ -27,6 +27,10 @@ has action_points => (
 
 with 'Illuminated::Role::IA';
 
+sub BUILD {
+  my ($self, $args) = @_;
+}
+
 sub aware_text
 {
     my $self = shift;
