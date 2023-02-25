@@ -758,17 +758,17 @@ sub execute_foe
     }
     elsif($command eq 'attack')
     {
-        $self->log($foe->name . " deals 1 damage to " . $target->name . "!");
-        $self->harm($foe, $target, 1);
-        # my $data = {
-        #     subject_1 => $foe,
-        #     subject_2 => $target,
-        #     try_type => undef,
-        #     command => 'attack',
-        #     weapon => $w,
-        #     damage => $w->damage,
-        #     call => 'play_harm',
-        # };
+        my $w = $foe->get_main_weapon();
+        $self->log($foe->name . " deals " . $w->damage . " to " . $target->name . "!");
+        $data = {
+             subject_1 => $foe,
+             subject_2 => $target,
+             try_type => undef,
+             command => 'attack',
+             weapon => $w,
+             damage => $w->damage,
+             call => 'play_harm',
+        };
     }
     elsif($command eq 'pursuit')
     {
@@ -784,8 +784,17 @@ sub execute_foe
     }
     elsif($command eq 'parry')
     {
-        $self->log($foe->name . " raises the aegis");
-        $self->activate_foe_weapon($foe, $foe->get_weapon('aegis'), $target);
+        $self->log($foe->name . " raises the shield");
+        my $shield = $foe->get_weapon_by_type('shield');
+        $data = {
+             subject_1 => $foe,
+             subject_2 => undef,
+             try_type => undef,
+             command => 'parry',
+             weapon => $shield,
+             damage => undef,
+             call => undef,
+        };
     }
     if($data)
     {
@@ -870,17 +879,6 @@ sub calculate_effects
     foreach my $t (@triggering)
     {
         $t->calculate_effects($self, $event, $data) if $t;
-    }
-}
-sub activate_foe_weapon
-{
-    my $self = shift;
-    my $foe = shift;
-    my $weapon = shift;
-    my $target = shift;
-    if($weapon->name eq 'aegis')
-    {
-        $foe->activate_status('parry');
     }
 }
 
@@ -1217,7 +1215,7 @@ sub play_command
     $data->{outcome} = $outcome;
     $self->calculate_effects("before " . $data->{command}, $data);
     my $call = $data->{call};
-    $self->$call($data);
+    $self->$call($data) if $call;
     $self->calculate_effects("after " . $data->{command}, $data);
     return $outcome;
 }

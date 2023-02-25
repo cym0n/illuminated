@@ -16,4 +16,17 @@ around BUILDARGS => sub {
   });
 };
 
+sub calculate_effects
+{
+    my $self = shift;
+    my $game = shift;
+    my $event = shift;
+    my $data = shift;
+    
+    if($event eq 'before parry')
+    {
+        $data->{subject_1}->activate_status('parry');
+    }
+}
+
 1;

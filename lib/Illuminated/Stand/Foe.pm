@@ -44,6 +44,22 @@ sub aware_text
     }
 }
 
+sub get_main_weapon
+{
+    my $self = shift;
+    return $self->weapons->[0];
+}
+
+sub get_weapon_by_type
+{
+    my $self = shift;
+    my $type = shift;
+    for(@{$self->weapons})
+    {
+        return $_ if($_->type eq $type)
+    }
+    return undef;
+}
 
 
 sub description
