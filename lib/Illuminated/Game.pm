@@ -4,6 +4,8 @@ use v5.10;
 use Moo;
 use Data::Dumper;
 use Illuminated::Weapon;
+use Illuminated::Weapon::Balthazar;
+use Illuminated::Weapon::Caliban;
 use Illuminated::Device::Jammer;
 use Illuminated::Stand::Player;
 use Illuminated::Stand::Foe;
@@ -215,12 +217,13 @@ sub standard_game
     $self->init_log;
     my $player;
     $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
-    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
-    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
+    $player->add_weapon(Illuminated::Weapon::Balthazar->new());
+    $player->add_weapon(Illuminated::Weapon::Caliban->new());
     $player->add_device(Illuminated::Device::Jammer->new());
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
-    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'balthazar'}));
-    $player->add_weapon(Illuminated::Weapon->new($self->weapon_templates->{'caliban'}));
+    $player->add_weapon(Illuminated::Weapon::Balthazar->new());
+    $player->add_weapon(Illuminated::Weapon::Caliban->new());
+
     $self->current_tile(Illuminated::Tile::GuardedSpace->new());
 }
 
