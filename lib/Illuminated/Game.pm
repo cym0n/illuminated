@@ -752,7 +752,7 @@ sub execute_foe
             subject_2 => $target,
             direction => 'farther',
             try_type => undef,
-            command => 'fly_closer',
+            command => 'fly_away',
             call => 'play_move',
         };
     }
@@ -861,24 +861,38 @@ sub calculate_effects
     my $event = shift;
     my $data = shift;
 
-    my @targets = ();
+    my @targets = @{$data->{targets}};
 
-    if($data->{subject_2})
-    {
-        if(ref($data->{subject_2}) eq 'ARRAY')
-        {
-            @targets = @{$data->{subject_2}};
-        }
-        else
-        {
-            @targets = ( $data->{subject_2} );
-        }
-    }
+    my %already = ();
 
     my @triggering = (@targets, $data->{weapon}, $data->{subject_1});
     foreach my $t (@triggering)
     {
-        $t->calculate_effects($self, $event, $data) if $t;
+        if($t)
+        {
+            $t->calculate_effects($self, $event, $data);
+            $already{$t->tag} = 1 unless (ref($t) =~ /^Illuminated::Weapon/);
+        }
+    }
+    my @others = ();
+    my @first_group = ();
+    my @second_group = ();
+    if(ref($data->{subject_1}) eq 'Illuminated::Stand::Player')
+    {
+        @first_group = @{$self->foes};
+        @second_group = @{$self->players};
+    }
+    elsif(ref($data->{subject_1}) =~ /^Illuminated::Stand::Foe/) 
+    {
+        @first_group = @{$self->players};
+        @second_group = @{$self->foes};
+    }
+    foreach my $a (@first_group, @second_group)
+    {
+        if(! defined $already{$a->tag})
+        {
+            $a->calculate_effects($self, $event, $data);
+        }
     }
 }
 
@@ -1191,6 +1205,20 @@ sub play_command
 {
     my $self = shift;
     my $data = shift;
+
+    my @targets = (); #Useful on general purporse checks
+    if($data->{subject_2})
+    {
+        if(ref($data->{subject_2}) eq 'ARRAY')
+        {
+            @targets = @{$data->{subject_2}};
+        }
+        else
+        {
+            @targets = ( $data->{subject_2} );
+        }
+    }
+    $data->{targets} = \@targets;
 
     my $throw = undef;
     if($data->{try_type})

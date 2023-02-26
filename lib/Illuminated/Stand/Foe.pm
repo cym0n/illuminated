@@ -12,6 +12,14 @@ sub _build_tag
     my $self = shift;
     return 'F-' . lc($self->name);
 }
+has game_type => (
+    is => 'lazy'
+);
+sub _build_game_type
+{
+    my $self = shift;
+    return 'foe'
+}
 has aware => (
     is => 'rw',
     default => 0,
@@ -73,6 +81,18 @@ sub description
     return $desc;
 }
 
+sub gain_action_point
+{
+    my $self = shift;
+    $self->action_points($self->action_points + 1);
+}
+sub spend_action_point
+{
+    my $self = shift;
+    $self->action_points($self->action_points - 1);
+}
+
+
 sub strategy
 {
     my $self = shift;
@@ -80,7 +100,39 @@ sub strategy
     return $self->_standard_ia($game, { 'close' => 'away',
                                         'near'  => 'away',
                                         'far'   => 'away' });
-    
 }
+
+sub set_guard 
+{
+    my $self = shift;
+    my $foe = shift;
+    $self->activate_status('guard ' . $foe->tag);
+}
+
+around calculate_effects => sub 
+{
+    my $orig = shift;
+    my $self = shift;
+    my $game = shift;
+    my $event = shift;
+    my $data = shift;
+    $self->$orig($game, $event, $data);
+    if(my $guard = $self->has_status('guard'))
+    {
+        if($guard =~ /^guard (.*)$/)
+        {
+            my $guarded = $1;
+            my $guarded_obj = undef;
+            if($data->{subject_1}->game_type eq 'player'  &&
+               $event =~ /^after/ && $event !~ /fly_away/ &&
+               ($guarded_obj = grep { $_->tag eq $guarded } @{$data->{targets}}) )
+            {
+                $game->log($self->name . " guarding " . $guarded_obj->[0]->name . "! Action point given!");
+                $self->gain_action_point();
+            }
+        }
+    }
+
+};
 
 1;

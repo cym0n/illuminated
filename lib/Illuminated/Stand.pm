@@ -96,7 +96,7 @@ sub has_status
 {
     my $self = shift;
     my $s = shift;
-    return grep { $_ eq $s} @{$self->status}
+    return grep { $_ =~ /^$s/ } @{$self->status}
 }
 
 sub activate_status
