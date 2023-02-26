@@ -42,6 +42,10 @@ $game->configure_scenario( [4, 4, 4], [], ['D', 'quit'] );
 $game->run;
 is($game->get_distance($p1, $csi), 'near', $csi->name . " is near from " . $p1->name);
 is($csi->has_status('parry'), 1, $csi->name . " has parry" );
+diag("Template get close to csi with consequences, csi smashes him with the sword");
+$game->configure_scenario( [4], [0], ['S', 'C csi', 'quit'] );
+$game->run;
+is($p2->health, 8, $p2->name . " got two damages from csi sword");
 
 is($game->random_dice_counter, 0, "No real dice");
 is($game->true_random_counter, 0, "No true random numbers");
