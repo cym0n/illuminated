@@ -1244,7 +1244,7 @@ sub play_command
     $self->calculate_effects("before " . $data->{command}, $data);
     my $call = $data->{call};
     $self->$call($data) if $call;
-    $self->calculate_effects("after " . $data->{command}, $data);
+    $self->calculate_effects("after " . $data->{command}, $data) unless $outcome == 0;
     return $outcome;
 }
 
