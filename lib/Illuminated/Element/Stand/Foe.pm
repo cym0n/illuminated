@@ -1,8 +1,8 @@
-package Illuminated::Stand::Foe;
+package Illuminated::Element::Stand::Foe;
 
 use v5.10;
 use Moo;
-extends 'Illuminated::Stand';
+extends 'Illuminated::Element::Stand';
 
 has tag => (
     is => 'lazy'

@@ -1,8 +1,8 @@
-package Illuminated::Stand::Player;
+package Illuminated::Element::Stand::Player;
 
 use v5.10;
 use Moo;
-extends 'Illuminated::Stand';
+extends 'Illuminated::Element::Stand';
 
 has tag => (
     is => 'lazy'

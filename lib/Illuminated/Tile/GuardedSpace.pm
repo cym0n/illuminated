@@ -20,15 +20,15 @@ has interface_options => (
 );
 has foes => (
     is => 'ro',
-    default => sub { [ [ 'alpha',   'Illuminated::Stand::Foe::Thug' ],
-                       [ 'beta',    'Illuminated::Stand::Foe::Thug' ],
-                       [ 'gamma',   'Illuminated::Stand::Foe::Thug' ],
-                       [ 'epsilon', 'Illuminated::Stand::Foe::Thug' ],
-                       [ 'delta',   'Illuminated::Stand::Foe::Thug' ],
-                       [ 'ro',      'Illuminated::Stand::Foe::Gunner' ],
-                       [ 'iota',    'Illuminated::Stand::Foe::Gunner' ],
-                       [ 'csi',     'Illuminated::Stand::Foe::Gladiator' ],
-                       [ 'pi',      'Illuminated::Stand::Foe::Gladiator' ],
+    default => sub { [ [ 'alpha',   'Illuminated::Element::Stand::Foe::Thug' ],
+                       [ 'beta',    'Illuminated::Element::Stand::Foe::Thug' ],
+                       [ 'gamma',   'Illuminated::Element::Stand::Foe::Thug' ],
+                       [ 'epsilon', 'Illuminated::Element::Stand::Foe::Thug' ],
+                       [ 'delta',   'Illuminated::Element::Stand::Foe::Thug' ],
+                       [ 'ro',      'Illuminated::Element::Stand::Foe::Gunner' ],
+                       [ 'iota',    'Illuminated::Element::Stand::Foe::Gunner' ],
+                       [ 'csi',     'Illuminated::Element::Stand::Foe::Gladiator' ],
+                       [ 'pi',      'Illuminated::Element::Stand::Foe::Gladiator' ],
                      ] }
 );
 

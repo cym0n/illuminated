@@ -1,32 +1,12 @@
-package Illuminated::Stand;
+package Illuminated::Element::Stand;
 
 use v5.10;
 use Moo;
+extends 'Illuminated::Element';
 
-has name => (
-    is => 'ro'
-);
-has type => (
-    is => 'ro'
-);
-has health => (
-    is => 'rw'
-);
 has energy => (
     is => 'rw'
 );
-has active => (
-    is => 'rw',
-    default => 1
-);
-has tag => (
-    is => 'lazy'
-);
-sub _build_tag
-{
-    my $self = shift;
-    return 'X-' . lc($self->name);
-}
 has weapons => (
     is => 'ro',
     default => sub { [] }
@@ -142,14 +122,6 @@ sub counters_clock
             }
         }
     }
-}
-
-sub harm
-{
-    my $self = shift;
-    my $damage = shift;
-    $self->health($self->health - $damage);
-    $self->health(0) if $self->health < 0;
 }
 
 sub use_energy

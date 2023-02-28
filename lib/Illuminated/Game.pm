@@ -7,9 +7,8 @@ use Illuminated::Weapon;
 use Illuminated::Weapon::Balthazar;
 use Illuminated::Weapon::Caliban;
 use Illuminated::Device::Jammer;
-use Illuminated::Stand::Player;
-use Illuminated::Stand::Foe;
-use Illuminated::Stand::Foe::Thug;
+use Illuminated::Element::Stand::Player;
+use Illuminated::Element::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
 
 
@@ -424,7 +423,7 @@ sub add_player
     $template->{name} = $name;
     $template->{type} = $type;
    
-    my $pl = Illuminated::Stand::Player->new($template);
+    my $pl = Illuminated::Element::Stand::Player->new($template);
     push @{$self->players}, $pl;
     return $pl;
 }
@@ -480,12 +479,12 @@ sub detect_player_foe
     my $b = shift;
     my $player = undef;
     my $foe = shift;
-    if(ref($a) eq 'Illuminated::Stand::Player')
+    if($a->game_type eq 'player' )
     {
         $player = $a;
         $foe = $b;
     }
-    elsif(ref($a) =~ /^Illuminated::Stand::Foe/)
+    elsif($a->game_type eq 'foe')
     {
         $player = $b;
         $foe = $a;
@@ -615,11 +614,11 @@ sub kill
     $s->health(0);
     $s->active(0);
     $self->log($s->name . " killed!");
-    if(ref($s) =~ /^Illuminated::Stand::Foe/)
+    if($s->game_type eq 'foe')
     {
         @{$self->foes} = grep { $_->tag ne $s->tag}  @{$self->foes};
     }
-    elsif(ref($s) eq 'Illuminated::Stand::Player')
+    elsif($s->game_type eq 'player')
     {
         @{$self->players} = grep { $_->tag ne $s->tag } @{$self->players};
     }
@@ -877,12 +876,12 @@ sub calculate_effects
     my @others = ();
     my @first_group = ();
     my @second_group = ();
-    if(ref($data->{subject_1}) eq 'Illuminated::Stand::Player')
+    if($data->{subject_1}->game_type eq 'player')
     {
         @first_group = @{$self->foes};
         @second_group = @{$self->players};
     }
-    elsif(ref($data->{subject_1}) =~ /^Illuminated::Stand::Foe/) 
+    elsif($data->{subject_1}->game_type eq 'foe') 
     {
         @first_group = @{$self->players};
         @second_group = @{$self->foes};

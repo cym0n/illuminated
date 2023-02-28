@@ -1,8 +1,8 @@
-package Illuminated::Stand::Foe::Gladiator;
+package Illuminated::Element::Stand::Foe::Gladiator;
 
 use v5.10;
 use Moo;
-extends 'Illuminated::Stand::Foe';
+extends 'Illuminated::Element::Stand::Foe';
 
 use Illuminated::Weapon::Caliban;
 use Illuminated::Weapon::Aegis;

@@ -1,24 +1,24 @@
-package Illuminated::Stand::Foe::Thug;
+package Illuminated::Element::Stand::Foe::Gunner;
 
 use v5.10;
 use Moo;
-extends 'Illuminated::Stand::Foe';
+extends 'Illuminated::Element::Stand::Foe';
 
-use Illuminated::Weapon::Balthazar;
+use Illuminated::Weapon::Reiter;
 
 around BUILDARGS => sub {
     my ( $orig, $class, @args ) = @_;
  
     return $class->$orig({
         name => $args[0],
-        type => 'thug',
+        type => 'gunner',
         health => 2,
     });
 };
 
 sub BUILD {
     my ($self, $args) = @_;
-    $self->add_weapon(Illuminated::Weapon::Balthazar->new());
+    $self->add_weapon(Illuminated::Weapon::Reiter->new());
 };
 
 sub strategy
@@ -31,11 +31,9 @@ sub strategy
         return ('warn', undef) if($throw < 3);
     }
     return $self->_standard_ia($game, { 'close' => 'away',
-                                        'near'  => 'attack',
-                                        'far'   => 'pursuit' }); 
+                                        'near'  => 'away',
+                                        'far'   => 'attack' });
 }
 
-
 1;
-
 
