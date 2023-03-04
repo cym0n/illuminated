@@ -20,45 +20,13 @@ has foes => (
     is => 'ro',
     default => sub { [ ] }
 );
+has others => (
+    is => 'ro',
+    default => sub { [] }
+);
 has current_tile => (
     is => 'rw',
     default => undef,
-);
-has player_templates => (
-    is => 'ro',
-    default => sub { {
-        'Maverick' => {
-            health => 10,
-            energy => 5,
-            power => 3,
-            speed => 2,
-            mind => 1,
-        },
-        'Tesla' => {
-            health => 10,
-            energy => 5,
-            power => 1,
-            speed => 1,
-            mind => 3,
-        }
-    } }
-);
-has foe_templates => (
-    is => 'ro',
-    default => sub { {
-        thug => {
-            health => 2,
-            type => 'thug'
-        },
-        gunner => {
-            health => 2,
-            type => 'gunner',
-        },
-        gladiator => {
-            health => 2,
-            type => 'gladiator',
-        }    
-    } } 
 );
 has distance_matrix => (
     is => 'ro',
@@ -96,39 +64,6 @@ has active_player_counter => (
     is => 'rw',
     default => 0
 );
-has weapon_templates => (
-    is => 'ro',
-    default => sub { {
-        'balthazar' => {
-            name => 'balthazar',
-            type => 'rifle',
-            try_type => 'mind',
-            range => [ 'near' ],
-            damage => 1
-        },
-        'caliban' => {
-            name => 'caliban',
-            type => 'sword',
-            try_type => 'power',
-            range => [ 'close' ],
-            damage => 2
-        },
-        'reiter' => {
-            name => 'reiter',
-            type => 'rifle',
-            try_type => 'mind',
-            range => [ 'far' ],
-            damage => 1
-        },
-        'aegis' => {
-            name => 'aegis',
-            type => 'shield',
-            try_type => 'power',
-            range => [ ],
-            damage => 0
-        }
-    } }
-);
 has loaded_dice => (
     is => 'rw',
     default => sub { [] }
@@ -156,6 +91,25 @@ has true_random_counter => (
 has running => (
     is => 'rw',
     default => 1
+);
+has player_templates => (
+    is => 'ro',
+    default => sub { {
+        'Maverick' => {
+            health => 10,
+            energy => 5,
+            power => 3,
+            speed => 2,
+            mind => 1,
+        },
+        'Tesla' => {
+            health => 10,
+            energy => 5,
+            power => 1,
+            speed => 1,
+            mind => 3,
+        }
+    } }
 );
 
 
@@ -449,6 +403,21 @@ sub add_foe
     die $@ if $@;
     my $f = $foe_package->new($name);
     push @{$self->foes}, $f;
+    foreach(@{$self->players})
+    {
+        $self->set_distance($_, $f, 'none');
+    }
+}
+
+sub add_other
+{
+    my $self = shift;
+    my $name = shift;
+    my $other_package = shift;
+    eval("require $other_package");
+    die $@ if $@;
+    my $f = $other_package->new($name);
+    push @{$self->others}, $f;
     foreach(@{$self->players})
     {
         $self->set_distance($_, $f, 'none');

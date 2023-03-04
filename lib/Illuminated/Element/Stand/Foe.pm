@@ -136,4 +136,47 @@ around calculate_effects => sub
 
 };
 
+sub setup
+{
+    my $self = shift;
+    my $game = shift;
+    my $p = shift;
+    my $distance = shift;
+    my $awareness = shift;
+
+    $awareness = 1 if $self->aware;
+    my $throw = $game->dice(1, 1);
+    my $a;
+    my $d;
+    if($throw >= 5)
+    {
+        $a = defined $awareness ? $awareness : 0;
+        $d = $distance ? $distance : 'far'; #Used only if enemy already aware
+    }
+    elsif($throw >= 3)
+    {
+        $a = defined $awareness ? $awareness : 1;
+        $d = $distance ? $distance : 'far';
+    }
+    else
+    {
+        $a = defined $awareness ? $awareness : 1;
+        $d = $distance ? $distance : 'near';
+    }
+    $self->aware($a);
+    if($self->aware)
+    {
+        $game->set_distance($p, $self, $d);
+        $game->set_foe_far_from_all($self);
+        my $d_label = $d;
+        $d_label .= $d eq 'far' ? " from " : " ";
+        $d_label .= $p->name;
+        $game->log($self->name . " is aware and " . $d_label);
+    }
+    else
+    {
+        $game->log($self->name . " is unaware");
+    }
+}
+
 1;

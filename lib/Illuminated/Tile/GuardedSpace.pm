@@ -55,7 +55,7 @@ sub gate_run
         foreach my $f ( @{$self->foes} )
         {
             my $fobj = $game->get_foe($f->[0]);
-            $self->setup_foe($game, $player, $fobj, undef, undef);
+            $fobj->setup($game, $player, undef, undef);
         }
         return 1;
     }
@@ -77,7 +77,7 @@ sub gate_run
             foreach my $f ( @{$self->foes} )
             {
                 my $fobj = $game->get_foe($f->[0]);
-                $self->setup_foe($game, $player, $fobj, undef, 1);
+                $fobj->setup($game, $player, undef, 1);
             }
         }
         return 1;
@@ -99,13 +99,13 @@ sub gate_run
             }
             my @available = grep { $game->at_distance($_, "close") == 0 } @{$game->foes};
             my $f2 = $available[$game->game_rand( @available)];
-            $self->setup_foe($game, $player, $f2, 'close', 1);
+            $f2->setup($game, $player, 'close', 1);
             foreach my $f3 ( @{$self->foes} )
             {
                 my $fobj = $game->get_foe($f3->[0]);
                 if($fobj && $fobj->tag ne $f2->tag)
                 {
-                    $self->setup_foe($game, $player, $fobj, undef, 1);
+                    $fobj->setup($game, $player, undef, 1);
                 }
             }
         }
@@ -115,7 +115,7 @@ sub gate_run
             foreach my $f ( @{$self->foes} )
             {
                 my $fobj = $game->get_foe($f->[0]);
-                $self->setup_foe($game, $player, $fobj, undef, 1);
+                $fobj->setup($game, $player, undef, 1);
             }
         }
         return 1;

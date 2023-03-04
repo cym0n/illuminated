@@ -17,6 +17,10 @@ has foes => (
     is => 'ro',
     default => sub { [] }
 );
+has others => (
+    is => 'ro',
+    default => sub { [] }
+);
 
 
 sub gate_run
@@ -32,47 +36,13 @@ sub init_foes
         $game->add_foe($f->[0], $f->[1])
     }
 }
-sub setup_foe
+sub init_others
 {
     my $self = shift;
     my $game = shift;
-    my $p = shift;
-    my $f = shift;
-    my $distance = shift;
-    my $awareness = shift;
-
-    $awareness = 1 if $f->aware;
-    my $throw = $game->dice(1, 1);
-    my $a;
-    my $d;
-    if($throw >= 5)
+    foreach my $o (@{$self->others})
     {
-        $a = defined $awareness ? $awareness : 0;
-        $d = $distance ? $distance : 'far'; #Used only if enemy already aware
-    }
-    elsif($throw >= 3)
-    {
-        $a = defined $awareness ? $awareness : 1;
-        $d = $distance ? $distance : 'far';
-    }
-    else
-    {
-        $a = defined $awareness ? $awareness : 1;
-        $d = $distance ? $distance : 'near';
-    }
-    $f->aware($a);
-    if($f->aware)
-    {
-        $game->set_distance($p, $f, $d);
-        $game->set_foe_far_from_all($f);
-        my $d_label = $d;
-        $d_label .= $d eq 'far' ? " from " : " ";
-        $d_label .= $p->name;
-        $game->log($f->name . " is aware and " . $d_label);
-    }
-    else
-    {
-        $game->log($f->name . " is unaware");
+        $game->add_other($o->[0], $o->[1])
     }
 }
 
