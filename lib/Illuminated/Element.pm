@@ -32,4 +32,5 @@ sub harm
     $self->health(0) if $self->health < 0;
 }
 
+
 1;

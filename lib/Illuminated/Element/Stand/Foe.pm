@@ -167,7 +167,7 @@ sub setup
     if($self->aware)
     {
         $game->set_distance($p, $self, $d);
-        $game->set_foe_far_from_all($self);
+        $game->set_far_from_all($self);
         my $d_label = $d;
         $d_label .= $d eq 'far' ? " from " : " ";
         $d_label .= $p->name;

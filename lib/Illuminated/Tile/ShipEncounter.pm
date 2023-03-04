@@ -45,13 +45,19 @@ sub gate_run
     my $player = shift;
     my $choice = shift;
     
-    if($choice eq 'N')
+    if($choice eq 'G')
     {
         foreach my $f ( @{$self->foes} )
         {
             my $fobj = $game->get_foe($f->[0]);
-            $self->setup_foe($game, $player, $fobj, undef, undef);
+            $fobj->setup($game, $player, $fobj, undef, undef);
+        }
+        foreach my $o ( @{$self->others} )
+        {
+            my $obj = $game->get_other($o->[0]);
+            $obj->setup($game);
         }
         return 1;
     }
 }
+1;

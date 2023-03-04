@@ -13,3 +13,12 @@ around BUILDARGS => sub {
         health => 4,
     });
 };
+
+sub setup
+{
+    my $self = shift;
+    my $game = shift;
+    $game->set_far_from_all($self);
+}
+
+1;

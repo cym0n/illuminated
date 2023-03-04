@@ -10,6 +10,7 @@ use Illuminated::Device::Jammer;
 use Illuminated::Element::Stand::Player;
 use Illuminated::Element::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
+use Illuminated::Tile::ShipEncounter;
 
 
 has players => (
@@ -165,9 +166,25 @@ sub standard_test
     return $game;
 }
 
-sub standard_game
+sub ship_test
+{
+    my $package = shift;
+
+    my $game = $package->init_test('ship_game', 
+                                    [6, 6, 6, 4, 2, 4, 2, 2, 2,
+                                     6, 6, 6, 4, 2, 4, 2, 2, 2, 
+                                     6, 6, 6, 4, 2, 4], 
+                                    [], 
+                                    ['G', 'G', 'quit']);
+    $game->run();
+    $game->log("========== SHIP TEST GENERATION ENDED ==============");
+    return $game;
+}
+
+sub one_tile
 {
     my $self = shift;
+    my $tile = shift;
     $self->init_log;
     my $player;
     $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
@@ -177,8 +194,20 @@ sub standard_game
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon::Balthazar->new());
     $player->add_weapon(Illuminated::Weapon::Caliban->new());
+    $self->current_tile($tile);
+}
 
-    $self->current_tile(Illuminated::Tile::GuardedSpace->new());
+
+sub standard_game
+{
+    my $self  = shift;
+    $self->one_tile(Illuminated::Tile::GuardedSpace->new());    
+}
+
+sub ship_game
+{
+    my $self  = shift;
+    $self->one_tile(Illuminated::Tile::ShipEncounter->new());    
 }
 
 sub active_player
@@ -208,7 +237,7 @@ sub run
         if(! $self->current_tile->entered)
         {
             $self->log("Entering tile phase");
-            $self->current_tile->init_foes($self);
+            $self->current_tile->init($self);
             $self->reset_player_counter();
             while($self->active_player && $self->running)
             {
@@ -441,6 +470,20 @@ sub get_foe
     }
     return undef;
 }
+sub get_other
+{
+    my $self = shift;
+    my $name = shift;
+    if($name)
+    {
+        my $tag = 'X-' . lc($name);
+        for(@{$self->others})
+        {
+            return $_ if $_->tag eq $tag;
+        }
+    }
+    return undef;
+}
 sub detect_player_foe
 {
     my $self = shift;
@@ -453,7 +496,7 @@ sub detect_player_foe
         $player = $a;
         $foe = $b;
     }
-    elsif($a->game_type eq 'foe')
+    else#if($a->game_type eq 'foe') #come good for others too
     {
         $player = $b;
         $foe = $a;
@@ -477,7 +520,7 @@ sub get_distance
     my ($player, $foe) = $self->detect_player_foe($a, $b);
     return $self->distance_matrix->{$player->tag}->{$foe->tag}
 }
-sub set_foe_far_from_all
+sub set_far_from_all
 {
     my $self = shift;
     my $f = shift;
@@ -710,7 +753,7 @@ sub execute_foe
         my $f = $unw[$self->game_rand(@unw)];
         $self->log($foe->name . " reaches " . $f->name . " and makes him aware!");
         $f->aware(1);
-        $self->set_foe_far_from_all($f);
+        $self->set_far_from_all($f);
     }
     elsif($command eq 'away')
     {
