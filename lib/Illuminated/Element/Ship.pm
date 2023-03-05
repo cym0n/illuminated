@@ -43,6 +43,10 @@ sub suitable
             return 0; #You can't get close to ship
         }
     }
+    elsif($command eq 'fly_away')
+    {
+        if($game->get_distance($game->active_player, $self) ne 'near') { return 0 }
+    }
     return 1;
 }
 sub description

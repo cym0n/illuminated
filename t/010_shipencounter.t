@@ -17,10 +17,14 @@ is($ship->tag, 'X-joyful sacrifice', "Ship exists");
 is($game->get_distance($p1, $ship), 'far', $p1->name . " is far from ship");
 is($game->get_distance($p2, $ship), 'far', $p2->name . " is far from ship");
 
-$game->configure_scenario([6, 6], [], ['S', 'C joyful sacrifice', 'quit']);
+$game->configure_scenario([6, 6, 6], [0, 0], ['S', 'C joyful sacrifice', 'C joyful sacrifice', 'quit']);
 $game->run;
 is($game->get_distance($p1, $ship), 'near', $p1->name . " is near from ship");
-is($game->get_distance($p2, $ship), 'far', $p2->name . " is far from ship");
+is($game->get_distance($p2, $ship), 'near', $p2->name . " is near from ship");
+
+$game->configure_scenario([6], [], ['A1 joyful sacrifice', 'quit']);
+$game->run;
+is($ship->health, 3, "Ship hit by Paladin");
 
 is($game->random_dice_counter, 0, "No real dice");
 is($game->true_random_counter, 0, "No true random numbers");

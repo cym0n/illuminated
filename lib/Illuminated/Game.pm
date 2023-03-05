@@ -301,18 +301,15 @@ sub standard_commands
     }
     elsif($answer eq 'C')
     {
-        $self->fly_closer($arg);
-        return 1;
+        return $self->fly_closer($arg);
     }
     elsif($answer eq 'F')
     {
-        $self->fly_away($arg);
-        return 1;
+        return $self->fly_away($arg);
     }
     elsif($answer =~ /^A\d+$/)
     {
-        $self->attack_foe($answer, $arg);
-        return 1;
+        return $self->attack_foe($answer, $arg);
     }
     elsif($answer =~ /^P\d+$/)
     {
@@ -321,8 +318,7 @@ sub standard_commands
     }
     elsif($answer eq 'D')
     {
-        $self->disengage();
-        return 1;
+        return $self->disengage();
     }
     return 0;
 }
@@ -601,7 +597,7 @@ sub at_distance
     if($player)
     {
         $subject = $player;
-        @select = @{$self->foes};
+        @select = (@{$self->foes}, @{$self->others});
     }
     elsif($foe)
     {
@@ -1054,9 +1050,8 @@ sub fly_away
     }
     else
     {
-        my $f = $self->get_foe($who);
-        if(! $f) { $self->log("$who doesn't exists or is not active"); return 0 }
-        if($self->get_distance($self->active_player, $f) ne 'near') { $self->log("$who is not near"); return 0 }
+        my $f = $self->get_any($who, 'fly_away');
+        if(! $f) { $self->log("$who doesn't exists or is not suitable"); return 0 }
         $self->log("Flying away from $who (speed try)");
         @targets = ( $f );
     }
@@ -1163,8 +1158,8 @@ sub attack_foe
     if(! $foe)
     {
         my $fname = shift;
-        $foe = $self->get_foe($fname);
-        if(! $foe) { $self->log("$fname doesn't exists or is not active"); return 0 }
+        $foe = $self->get_any($fname, 'attack_foe');
+        if(! $foe) { $self->log("$fname doesn't exists or is not suitable"); return 0 }
         $combat_type = 'ranged';
     }
     else

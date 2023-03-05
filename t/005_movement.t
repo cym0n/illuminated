@@ -15,7 +15,11 @@ diag("Log file is: " . $game->log_name);
 my $p1 = $game->players->[0];
 my $p2 = $game->players->[1];
 
-diag("Palading gets close to iota");
+diag("Paladin getting away from epsilon already far. Error");
+$game->configure_scenario( [], [], ['F epsilon', 'quit'] );
+$game->run;
+
+diag("Paladin gets close to iota");
 $game->configure_scenario( [6, 6], [], ['C iota', 'quit'] );
 $game->run;
 is($game->get_distance($p1, $game->foes->[6]), 'close', $game->foes->[6]->name . " is close from " . $p1->name);

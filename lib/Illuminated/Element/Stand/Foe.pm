@@ -191,6 +191,10 @@ sub suitable
         my ( $cl ) = $game->at_distance($self, 'close', 1);
         if($cl && $game->get_distance($game->active_player, $self) eq 'near') { $game->log($self->name . " already close to " . $cl->name); return 0}
     }
+    elsif($command eq 'fly_away')
+    {
+        if($game->get_distance($game->active_player, $self) ne 'near') { return 0 }
+    }
     return 1;
 }
 

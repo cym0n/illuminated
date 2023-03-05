@@ -50,7 +50,7 @@ sub gate_run
         foreach my $f ( @{$self->foes} )
         {
             my $fobj = $game->get_foe($f->[0]);
-            $fobj->setup($game, $player, $fobj, undef, undef);
+            $fobj->setup($game, $player, undef, 1);
         }
         foreach my $o ( @{$self->others} )
         {
