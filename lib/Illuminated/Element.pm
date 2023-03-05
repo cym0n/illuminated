@@ -32,5 +32,11 @@ sub harm
     $self->health(0) if $self->health < 0;
 }
 
+sub suitable
+{
+    my $self = shift;
+    return 1;
+}
+
 
 1;

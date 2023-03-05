@@ -179,4 +179,19 @@ sub setup
     }
 }
 
+sub suitable
+{
+    my $self = shift;
+    my $game = shift;
+    my $command = shift;
+    return 1 if(! $command);
+    return 0 if ! $self->aware;
+    if($command eq 'fly_closer')
+    {
+        my ( $cl ) = $game->at_distance($self, 'close', 1);
+        if($cl && $game->get_distance($game->active_player, $self) eq 'near') { $game->log($self->name . " already close to " . $cl->name); return 0}
+    }
+    return 1;
+}
+
 1;

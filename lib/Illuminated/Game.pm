@@ -484,6 +484,31 @@ sub get_other
     }
     return undef;
 }
+sub get_any
+{
+    my $self = shift;
+    my $name = shift;
+    my $command = shift;
+    my $f = $self->get_foe($name);
+    if($f)
+    {
+        if($f->suitable($self, $command))
+        {
+            return $f;
+        }
+    }
+    my $o = $self->get_other($name);
+    {
+        if($o)
+        {
+            if($o->suitable($self, $command))
+            {
+                return $o;
+            }
+        }
+    }
+    return undef;
+}
 sub detect_player_foe
 {
     my $self = shift;
@@ -817,6 +842,10 @@ sub assign_action_point
 {
     my $self = shift;
     my $foe = shift;
+    if($foe && $foe->game_type ne 'foe')
+    {
+        $foe = undef;
+    }
     if(! $foe || ! $foe->active)
     {
         $foe = $self->foes->[$self->game_rand(@{$self->foes})];
@@ -957,6 +986,12 @@ sub situation
     {
         $self->log($f->description . " <" . $self->get_distance($p, $f) . ">");
     }
+    $self->log('---');
+    foreach my $o (@{$self->others})
+    {
+        $self->log($o->description . " <" . $self->get_distance($p, $o) . ">");
+    }
+    
     print "\n";
     return 0;
 }
@@ -967,16 +1002,13 @@ sub fly_closer
     my $fname = shift;
 
     #Preconditions
-    my $foe = $self->get_foe($fname);
-    if(! $foe) { $self->log("$fname doesn't exists or is inactive"); return 0 }
-    if(! $foe->aware) { $self->log("$fname " . $foe->aware_text); return 0 }
-    my ( $cl ) = $self->at_distance($foe, 'close', 1);
-    if($cl && $self->get_distance($self->active_player, $foe) eq 'near') { $self->log("$fname already close to " . $cl->name); return 0}
+    my $any = $self->get_any($fname, 'fly_closer');
+    if(! $any) { $self->log("$fname doesn't exists or is it not suitable"); return 0 }
 
     #Data
     my $data = {
         subject_1 => $self->active_player,
-        subject_2 => $foe,
+        subject_2 => $any,
         direction => 'closer',
         try_type => 'speed',
         command => 'fly_closer',
@@ -991,18 +1023,18 @@ sub fly_closer
     if($outcome == 2)
     {
         $self->log("Successful approach");
-        $self->log($foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name); 
+        $self->log($any->name . " now " . $self->get_distance($self->active_player, $any) . " for " . $self->active_player->name); 
     }
     elsif($outcome == 1)
     {
         $self->log("Successful approach with consequences");
-        $self->log($foe->name . " now " . $self->get_distance($self->active_player, $foe) . " for " . $self->active_player->name);
-        $self->assign_action_point($foe);
+        $self->log($any->name . " now " . $self->get_distance($self->active_player, $any) . " for " . $self->active_player->name);
+        $self->assign_action_point($any);
     }
     elsif($outcome == 0)
     {
         $self->log("Failed to approach!");
-        $self->assign_action_point($foe);
+        $self->assign_action_point($any);
     }
     return 1;
 }
