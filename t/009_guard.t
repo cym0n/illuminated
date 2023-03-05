@@ -21,7 +21,7 @@ my ( $delta_status ) = $delta->has_status('guard');
 is($delta_status, 'guard F-epsilon', "Delta is the guard of epsilon");
 
 diag("Paladin tries to get close to epsilon and delta reacts");
-$game->configure_scenario([6, 6, 4], [], ['C epsilon', 'quit']);
+$game->configure_scenario([6, 6, 4], [0], ['C epsilon', 'quit']);
 $game->run;
 is($p1->health, 9, $p1->name . " hit by delta, guard of epsilon");
 

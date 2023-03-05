@@ -51,6 +51,7 @@ sub gate_run
         {
             my $fobj = $game->get_foe($f->[0]);
             $fobj->setup($game, $player, undef, 1);
+            $fobj->activate_status('guard X-joyful sacrifice');
         }
         foreach my $o ( @{$self->others} )
         {

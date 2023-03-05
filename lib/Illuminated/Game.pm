@@ -177,6 +177,10 @@ sub ship_test
                                     [], 
                                     ['G', 'G', 'quit']);
     $game->run();
+    for(@{$game->foes})
+    {
+        $_->deactivate_status('guard X-joyful sacrifice');
+    }
     $game->log("========== SHIP TEST GENERATION ENDED ==============");
     return $game;
 }
