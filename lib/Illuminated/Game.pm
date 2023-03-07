@@ -89,6 +89,10 @@ has true_random_counter => (
     is => 'rw',
     default => 0
 );
+has turn => (
+    is => 'rw',
+    default => 0
+);
 has running => (
     is => 'rw',
     default => 1
@@ -832,6 +836,20 @@ sub execute_foe
              call => undef,
         };
     }
+    elsif($command =~ /device (.*)$/)
+    {
+        my $dev_name = $1;
+        my $d = $foe->get_device($dev_name);
+        $self->log($foe->name . " use device: $dev_name");
+        $data = {
+             subject_1 => $foe,
+             subject_2 => $target,
+             try_type => undef,
+             device => $d,
+             command => 'device',
+             call => 'play_device',
+        };
+    }
     if($data)
     {
         $self->play_command($data);
@@ -842,14 +860,18 @@ sub assign_action_point
 {
     my $self = shift;
     my $foe = shift;
+    $self->log("Trying to assign action point to " . $foe->name) if $foe;
     if($foe && $foe->game_type ne 'foe')
     {
+        $self->log($foe->name . " not a foe");
         $foe = undef;
     }
     if(! $foe || ! $foe->active)
     {
+        $self->log("Action point assigned random");
         $foe = $self->foes->[$self->game_rand(@{$self->foes})];
     }
+    $self->log("Action point assigned to " . $foe->name);
     $foe->action_points($foe->action_points + 1);
     $self->log("Action point given to: " . $foe->name);
 }
@@ -949,6 +971,7 @@ sub device
 sub clock
 {
     my $self = shift;
+    $self->turn($self->turn + 1);
     foreach my $p (@{$self->players})
     {
         $p->counters_clock($self);
@@ -957,6 +980,7 @@ sub clock
     {
         $f->counters_clock($self);
     }
+    $self->current_tile->execute_turn($self);
 }
 
 ### Combat commands

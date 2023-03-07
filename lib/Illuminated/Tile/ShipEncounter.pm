@@ -61,4 +61,23 @@ sub gate_run
         return 1;
     }
 }
+
+sub execute_turn
+{
+    my $self = shift;
+    my $game = shift;
+    if($game->turn eq 3)
+    {
+        $game->log("New stand appears! Class Deacon!");
+        $game->add_foe('Arabelle', 'Illuminated::Element::Stand::Foe::Deacon');
+        my $f = $game->get_foe('Arabelle');
+        $f->activate_status('guard X-joyful sacrifice');
+        my $ship = $game->get_other('joyful sacrifice');
+        for(@{$game->players})
+        {
+            $f->setup($game, $_, $game->get_distance($_, $ship), 1); 
+        }
+    }
+    
+}
 1;

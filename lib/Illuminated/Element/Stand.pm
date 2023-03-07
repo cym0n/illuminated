@@ -129,6 +129,10 @@ sub use_energy
     my $self = shift;
     my $energy = shift;
     $self->energy($self->energy - $energy);
+    if($self->energy < 0)
+    {
+        $self->energy(0);
+    }
 }
 
 sub calculate_effects

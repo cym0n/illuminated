@@ -56,6 +56,10 @@ sub init_others
         $game->add_other($o->[0], $o->[1])
     }
 }
+sub execute_turn
+{
+    my $self = shift
+}
 
 
 
