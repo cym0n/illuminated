@@ -70,7 +70,7 @@ sub log
         push @{$self->memory_log}, $message;
         if(@{$self->memory_log} > $self->memory_log_limit)
         {
-            pop @{$self->memory_log};
+            shift @{$self->memory_log};
         }
         
     }
