@@ -153,6 +153,14 @@ sub calculate_effects
             $data->{damage} = 0;
         }
     }
+    elsif($event eq 'dice disengage')
+    {
+        if($data->{subject_2}->tag eq $self->tag && $self->has_status('grab'))
+        {
+            $game->log($data->{subject_1}->name . " disengaging, but " . $self->name . " has grab");
+            push @{$data->{dice_mods}}, '1max -1';
+        }
+    }
 }
 
 

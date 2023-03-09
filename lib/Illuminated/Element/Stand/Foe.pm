@@ -172,6 +172,7 @@ sub setup
     }
     else
     {
+        $game->log($self->name . ": no need of dice throw");
         $a = $awareness;
         $d = $distance;
     }

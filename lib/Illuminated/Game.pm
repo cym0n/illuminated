@@ -761,8 +761,18 @@ sub dice
             $self->random_dice_counter($self->random_dice_counter + 1);
         }
         push @throws, $throw;
-        $result = $throw if($throw > $result);
     }
+    foreach my $m (@{$mods})
+    {
+        if($m eq '1max -1')
+        {
+            @throws = sort @throws;
+            $throws[-1] = $throws[-1] -1;
+        }
+    }
+    for(@throws) { $result = $_ if($result < $_) }
+
+    #$result = $throw if($throw > $result);
     if($silent)
     {
         $self->file_only("Dice throw: " . join (" ", @throws) . " => " . $result);
@@ -1296,6 +1306,7 @@ sub play_command
     if($data->{try_type})
     {
         my $try = $data->{try_type};
+        $data->{dice_mods} = [];
         $self->calculate_effects("dice " . $data->{command}, $data);
         $throw = $self->dice($data->{subject_1}->$try, 0, $data->{dice_mods});
     }

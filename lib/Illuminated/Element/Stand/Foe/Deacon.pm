@@ -23,6 +23,7 @@ sub BUILD {
     my ($self, $args) = @_;
     $self->add_weapon(Illuminated::Weapon::Caliban->new());
     $self->add_device(Illuminated::Device::Drain->new());
+    $self->activate_status('grab');
 };
 
 sub strategy
