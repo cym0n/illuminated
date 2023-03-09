@@ -1172,6 +1172,7 @@ sub disengage
     elsif($outcome == 0)
     {
         $self->log("Disengaging failed!");
+        $self->assign_action_point($foe);
     }
     return 1;
 }
