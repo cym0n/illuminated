@@ -8,7 +8,7 @@ use Illuminated::Game;
 my $game;
 
 diag("Successful rush for both");
-$game = Illuminated::Game->init_test('standard_game', [6, 6, 6, ((4) x 8), 6, ((4) x 7)], [0, 0, 1, 1], ['R', 'R', 'quit']);
+$game = Illuminated::Game->init_test('standard_game', [6, 6, 6, ((4) x 7), 6, ((4) x 6)], [0, 0, 1, 1], ['R', 'R', 'quit']);
 diag("Log file is: " . $game->log_name);
 $game->run();
 foreach my $f (@{$game->foes})
