@@ -46,8 +46,26 @@ $game->configure_scenario([6, 6, 5, 5, 5, 1, 1, 1], [12, 0],
     'quit']);
 $game->run;
 is($game->get_distance($p1, $deacon), 'close', $p1->name . " is close to " . $deacon->name);
-is($deacon->health, 5, $deacon->name . " got one damage");
+is($deacon->health, 5, $deacon->name . " got 1 damage");
 is($p1->health, 6, $p1->name . " got 4 damages (two sword slash)");
+diag("Arabelle drain used again after overheat expired");
+$game->configure_scenario([6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5], [12, 12], 
+    [ 'A1 Arabelle', 'A1', 'F Arabelle',
+    'quit']);
+$game->run();
+is($game->memory_log->[-7], 'Arabelle use device: drain', 'Arabelle use device: drain');
+is($p1->energy, 3, "Energy of " . $p1->name . " drained");
+is($p2->energy, 3, "Energy of " . $p2->name . " drained");
+is($deacon->energy, 1, "Energy of " . $deacon->name . " used");
+is($deacon->health, 2, $deacon->name . " got 3 damage");
+is($p1->health, 4, $p1->name . " got 2 damages");
+
+diag("Grab ability of Arabelle showed");
+$game->configure_scenario([5, 4], [], 
+    [ 'D',
+    'quit']);
+$game->run();
+is($game->get_distance($p1, $deacon), 'close', $p1->name . " is close to " . $deacon->name);
 
 is($game->random_dice_counter, 0, "No real dice");
 is($game->true_random_counter, 0, "No true random numbers");
