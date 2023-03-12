@@ -23,6 +23,15 @@ sub preconditions
     return 1;
 }
 
+sub check_command
+{
+    my $self = shift;
+    my $game = shift;
+    my $subject = shift;
+    my $arg = shift;
+    return 1;
+}
+
 sub action
 {
     my $self = shift;

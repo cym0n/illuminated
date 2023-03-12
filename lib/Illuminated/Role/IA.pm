@@ -49,7 +49,7 @@ sub _standard_ia
                 else
                 {
                     $game->log($self->name . " IA: Many targets available for command $command");
-                    $target = $pls[$game->game_rand( $#pls )];
+                    $target = $pls[$game->game_rand('IA choosing target', \@pls )];
                 }
                 $self->focus($target);
             }

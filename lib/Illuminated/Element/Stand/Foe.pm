@@ -128,7 +128,7 @@ around calculate_effects => sub
                (my @guarded_obj = grep { $_->tag eq $guarded } @{$data->{targets}}) )
             {
                 $game->log($self->name . " guarding " . $guarded_obj[0]->name . "! Action point given!");
-                my $coin = $game->game_rand(1);
+                my $coin = $game->game_rand('distraction coin', 1);
                 if(! $self->focus || $coin) #only 50% possibility guard distracts foe from previous focus
                 {
                     $self->focus($data->{subject_1});

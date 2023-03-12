@@ -8,6 +8,7 @@ use Illuminated::Weapon::Balthazar;
 use Illuminated::Weapon::Caliban;
 use Illuminated::Device::Jammer;
 use Illuminated::Device::SwarmGun;
+use Illuminated::Device::CoriolisThruster;
 use Illuminated::Element::Stand::Player;
 use Illuminated::Element::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
@@ -65,6 +66,10 @@ has interface_devices => (
 has active_player_counter => (
     is => 'rw',
     default => 0
+);
+has active_player_device_chance => (
+    is => 'rw',
+    default => 1
 );
 has loaded_dice => (
     is => 'rw',
@@ -207,6 +212,7 @@ sub one_tile
     $player->add_weapon(Illuminated::Weapon::Balthazar->new());
     $player->add_weapon(Illuminated::Weapon::Caliban->new());
     $player->add_device(Illuminated::Device::SwarmGun->new());
+    $player->add_device(Illuminated::Device::CoriolisThruster->new());
     $self->current_tile($tile);
 }
 
@@ -288,6 +294,7 @@ sub run
                     $self->foes_turn();
                     $self->end_condition(); 
                     $self->next_player();
+                    $self->active_player_device_chance(1);
                 }
             }
             if($self->running)
@@ -324,9 +331,10 @@ sub standard_commands
     {
         return $self->attack_foe($answer, $arg);
     }
-    elsif($answer =~ /^P\d+$/)
+    elsif($answer =~ /^P\d+$/ && $self->active_player_device_chance)
     {
-        $self->use_device($answer, $arg);
+        my $outcome = $self->use_device($answer, $arg);
+        $self->active_player_device_chance(0) if $outcome;
         return 0; #Device use doesn't imply end of turn
     }
     elsif($answer eq 'D')
@@ -391,13 +399,16 @@ sub interface_preconditions
         }
     }
     $i = 1;
-    foreach my $d(@{$self->active_player->devices})
+    if($self->active_player_device_chance)
     {
-        if($d->preconditions($self, $self->active_player))
+        foreach my $d(@{$self->active_player->devices})
         {
-            push @options, ['^(P' . $i. ')( (.*))?$', "[P" . $i . "]ower: " . $d->name];
-            $devices_mapping{'P' . $i} = $d->name;
-            $i++;
+            if($d->preconditions($self, $self->active_player))
+            {
+                push @options, ['^(P' . $i. ')( (.*))?$', "[P" . $i . "]ower: " . $d->name];
+                $devices_mapping{'P' . $i} = $d->name;
+                $i++;
+            }
         }
     }
     $game->interface_options(\@options);
@@ -475,7 +486,7 @@ sub get_foe
     }
     else
     {   
-       return $self->foes->[$self->game_rand( @{$self->foes})]; 
+       return $self->foes->[$self->game_rand('get random foe', $self->foes)]; 
     }
     return undef;
 }
@@ -528,12 +539,32 @@ sub detect_player_foe
     if($a->game_type eq 'player' )
     {
         $player = $a;
-        $foe = $b;
+        if($b)
+        {
+            if(ref($b))
+            {
+                $foe = $b;
+            }
+            else
+            {
+                $foe = $self->get_any($b);
+            }
+        }
     }
     else#if($a->game_type eq 'foe') #come good for others too
     {
-        $player = $b;
         $foe = $a;
+        if($b)
+        {
+            if(ref($b))
+            {
+                $player = $b;
+            }
+            else
+            {
+                $player = $self->get_player($b);
+            }
+        }
     }
     return ($player, $foe);
 }
@@ -629,7 +660,7 @@ sub at_distance
         }
         else
         {
-            my $pick = $out[$self->game_rand( @out )];
+            my $pick = $out[$self->game_rand( 'get target at distance', \@out )];
             return ( $pick );
         }
     }
@@ -709,17 +740,19 @@ sub throw_loaded_die
 sub game_rand
 {
     my $self = shift;
-    my @input = @_;
+    my $reason = shift;
+    my $seed = shift;;
     my $number = undef;
-    if($#input == 0)
-    { 
-        $number = $input[0];
+    if(ref($seed) eq 'ARRAY')
+    {
+        $number = @{$seed};
     }
     else
     {
-        $number = @input;
+        $number = $seed;
     }
-    $self->file_only("Random evoked, range $number");
+
+    $self->file_only("Random evoked, range $number, reason $reason");
     if(exists $self->fake_random->[$self->fake_random_counter])
     {
         my $value = $self->fake_random->[$self->fake_random_counter];
@@ -794,7 +827,7 @@ sub execute_foe
     if($command eq 'warn')
     {
         my @unw = $self->unaware_foe();
-        my $f = $unw[$self->game_rand(@unw)];
+        my $f = $unw[$self->game_rand('aware command', \@unw)];
         $self->log($foe->name . " reaches " . $f->name . " and makes him aware!");
         $f->aware(1);
         $self->set_far_from_all($f);
@@ -884,7 +917,7 @@ sub assign_action_point
     if(! $foe || ! $foe->active)
     {
         $self->log("Action point assigned random");
-        $foe = $self->foes->[$self->game_rand(@{$self->foes})];
+        $foe = $self->foes->[$self->game_rand('assigning action point', $self->foes)];
     }
     $self->log("Action point assigned to " . $foe->name);
     $foe->action_points($foe->action_points + 1);
@@ -1256,7 +1289,8 @@ sub use_device
     #Preconditions
     my $d = $self->active_player->get_device($self->interface_devices->{$answer});
     if(! $d) { $self->log("$answer not mapped on suitable device"); return 0 }
-    if(! $d->preconditions($self, $self->active_player, $arg)) { $self->log($d->name . " cannot be used"); return 0 }; 
+    if(! $d->preconditions($self, $self->active_player)) { $self->log($d->name . " cannot be used"); return 0 }; 
+    if(! $d->check_command($self, $self->active_player, $arg)) { $self->log("Bad command for " . $d->name); return 0 }; 
 
     #Announcement
     $self->log("Using " . $d->name);
