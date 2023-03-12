@@ -9,6 +9,7 @@ use Illuminated::Weapon::Caliban;
 use Illuminated::Device::Jammer;
 use Illuminated::Device::SwarmGun;
 use Illuminated::Device::CoriolisThruster;
+use Illuminated::Device::FleuretThruster;
 use Illuminated::Element::Stand::Player;
 use Illuminated::Element::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
@@ -208,6 +209,7 @@ sub one_tile
     $player->add_weapon(Illuminated::Weapon::Balthazar->new());
     $player->add_weapon(Illuminated::Weapon::Caliban->new());
     $player->add_device(Illuminated::Device::Jammer->new());
+    $player->add_device(Illuminated::Device::FleuretThruster->new());
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon::Balthazar->new());
     $player->add_weapon(Illuminated::Weapon::Caliban->new());
