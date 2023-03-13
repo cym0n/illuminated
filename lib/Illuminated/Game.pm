@@ -14,6 +14,7 @@ use Illuminated::Element::Stand::Player;
 use Illuminated::Element::Stand::Foe;
 use Illuminated::Tile::GuardedSpace;
 use Illuminated::Tile::ShipEncounter;
+use Illuminated::Tile::SpaceStationAssault;
 
 
 has players => (
@@ -33,6 +34,10 @@ has current_tile => (
     default => undef,
 );
 has distance_matrix => (
+    is => 'ro',
+    default => sub { {} }
+);
+has ground_position => (
     is => 'ro',
     default => sub { {} }
 );
@@ -231,6 +236,12 @@ sub ship_game
     $self->one_tile(Illuminated::Tile::ShipEncounter->new());    
 }
 
+sub station_game
+{
+    my $self  = shift;
+    $self->one_tile(Illuminated::Tile::SpaceStationAssault->new());    
+}
+
 sub active_player
 {
     my $self = shift;
@@ -378,6 +389,14 @@ sub interface_preconditions
         $self->interface_header("Combat zone");
         push @options, ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"];
         push @options, ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"];
+        foreach my $o ($game->at_distance($game->active_player, 'near'))
+        {
+            if($o->ground)
+            {
+                push @options, ['^(L)( (.*))?$', "[L]and (speed try)"];
+                last;
+            }
+        }
         @ranges = qw( far near );
     }
     my %already = ();
@@ -585,8 +604,61 @@ sub get_distance
     my $a = shift;
     my $b = shift;
     my ($player, $foe) = $self->detect_player_foe($a, $b);
-    return $self->distance_matrix->{$player->tag}->{$foe->tag}
+    if( ($self->on_ground($player) && $self->on_ground($foe) && $self->on_ground($player) eq $self->on_ground($foe)) || #On the same ground
+        ( ! $self->on_ground($player) && ! $self->on_ground($foe)) ) #Both in space
+    {
+        return $self->distance_matrix->{$player->tag}->{$foe->tag}
+    }
+    elsif( $self->on_ground($player) && $self->on_ground($foe) && $self->on_ground($player) ne $self->on_ground($foe)) #On different grounds
+    {
+        return 'none'
+    }
+    elsif(  $self->on_ground($player) && ! $self->on_ground($foe))
+    {
+        if($a->tag eq $player->tag)
+        {
+            return 'below';
+        }
+        else
+        {
+            return 'above';
+        }
+    }
+    elsif( ! $self->on_ground($player) && $self->on_ground($foe))
+    {
+        if($a->tag eq $player->tag)
+        {
+            return 'above';
+        }
+        else
+        {
+            return 'below';
+        }
+    }
 }
+sub on_ground
+{
+    my $self = shift;
+    my $a = shift;
+    if(exists $self->ground_position->{$a->tag})
+    {
+        return $self->ground_position->{$a->tag}
+    }
+    else
+    {
+        return undef;
+    }
+}
+sub set_ground
+{
+    my $self = shift;
+    my $a = shift;
+    my $where = shift; #undef is space
+    $self->ground_position->{$a->tag} = $where;
+}
+
+
+
 sub set_far_from_all
 {
     my $self = shift;

@@ -19,6 +19,10 @@ has active => (
 has tag => (
     is => 'lazy'
 );
+has ground => (
+    is => 'ro',
+    default => 0
+);
 sub _build_tag
 {
     my $self = shift;
