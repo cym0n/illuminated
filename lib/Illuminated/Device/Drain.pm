@@ -24,7 +24,7 @@ around preconditions => sub {
     return $self->$orig($game, $subject, $arg);
 };
 
-sub action
+sub get_targets
 {
     my $self = shift;
     my $game = shift;
@@ -39,6 +39,16 @@ sub action
     {
         @targets = @{$game->foes}
     }
+    return @targets;
+}
+
+sub action
+{
+    my $self = shift;
+    my $game = shift;
+    my $subject = shift;
+    my $arg = shift;
+    my @targets = $self->get_targets($game, $subject, $arg);
     
     foreach my $p (@targets)
     {

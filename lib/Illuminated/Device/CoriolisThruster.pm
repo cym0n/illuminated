@@ -31,6 +31,7 @@ sub check_command
     my $game = shift;
     my $subject = shift;
     my $arg = shift;
+    $arg = uc($arg);
     if($arg =~ /^F$/)
     {
         return 1;
@@ -45,6 +46,30 @@ sub check_command
     return 0;
 }
 
+sub get_targets
+{
+    my $self = shift;
+    my $game = shift;
+    my $subject = shift;
+    my $arg = shift;
+    $arg = uc($arg);
+    if($arg =~ /^F$/)
+    {
+        return $game->at_distance($subject, 'near');
+    }
+    elsif($arg =~ /^C (.*)$/)
+    {
+        my $target_name = $1;
+        my ($player, $foe) = $game->detect_player_foe($subject, $target_name);
+        my $target = $player->tag eq $subject->tag ? $foe : $player;
+        return ( $target );
+    }
+    else
+    {
+        return ();
+    }
+}
+
 
 sub action
 {
@@ -56,8 +81,7 @@ sub action
     if($arg =~ /^F$/)
     {
         $game->log($subject->name . " fly away from all using " . $self->name);
-        my @targets = $game->at_distance($subject, 'near');
-        for(@targets)
+        for($self->get_targets($game, $subject, $arg))
         {
             $game->move($subject, $_, 'farther');
             $game->log($_->name . " now " . $game->get_distance($_, $subject) . " for " . $subject->name); 
@@ -65,12 +89,10 @@ sub action
     }
     elsif($arg =~ /^C (.*)$/)
     {
-        my $target_name = $1;
-        my ($player, $foe) = $game->detect_player_foe($subject, $target_name);
-        my $target = $player->tag eq $subject->tag ? $foe : $player;
-        $game->log($subject->name . " gets near " . $target->name . " using " . $self->name);  
-        $game->move($subject, $target, 'closer');
-        $game->log($target->name . " now " . $game->get_distance($target, $subject) . " for " . $subject->name); 
+        my @targets = $self->get_targets($game, $subject, $arg);
+        $game->log($subject->name . " gets near " . $targets[0]->name . " using " . $self->name);  
+        $game->move($subject, $targets[0], 'closer');
+        $game->log($targets[0]->name . " now " . $game->get_distance($targets[0], $subject) . " for " . $subject->name); 
     }
 }
 

@@ -26,19 +26,25 @@ around preconditions => sub {
     }
 };
 
+sub get_targets
+{
+    my $self = shift;
+    my $game = shift;
+    my $subject = shift;
+    my $arg = shift;
+    return grep { $_->aware } @{$game->foes}; #Can be only on players
+}
+
 sub action
 {
     my $self = shift;
     my $game = shift;
     my $subject = shift;
     my $arg = shift;
-    foreach my $f (@{$game->foes})
+    foreach my $f ($self->get_targets($game, $subject, $arg))
     {
-        if($f->aware)
-        {
-            $f->activate_status('jammed', 3);
-            $game->log($f->name . " communications are jammed");
-        }
+        $f->activate_status('jammed', 3);
+        $game->log($f->name . " communications are jammed");
     }
 }
 

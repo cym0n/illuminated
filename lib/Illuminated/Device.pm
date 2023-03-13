@@ -32,6 +32,15 @@ sub check_command
     return 1;
 }
 
+sub get_targets
+{
+    my $self = shift;
+    my $game = shift;
+    my $subject = shift;
+    my $arg = shift;
+    return ();
+}
+
 sub action
 {
     my $self = shift;

@@ -47,8 +47,7 @@ sub check_command
     return 0;
 }
 
-
-sub action
+sub get_targets
 {
     my $self = shift;
     my $game = shift;
@@ -57,16 +56,34 @@ sub action
     $arg = uc($arg);
     if($arg =~ /^D$/)
     {
-        my ( $target ) = $game->at_distance($subject, 'close');
-        $game->log($subject->name . " disangaging from " . $target->name . " useing " . $self->name);
-        $game->move($subject, $target, 'farther');
-        $game->log($target->name . " now " . $game->get_distance($target, $subject) . " for " . $subject->name); 
+        return $game->at_distance($subject, 'close');
     }
     elsif($arg =~ /^C (.*)$/)
     {
         my $target_name = $1;
         my ($player, $foe) = $game->detect_player_foe($subject, $target_name);
         my $target = $player->tag eq $subject->tag ? $foe : $player;
+        return ( $target );
+    }
+}
+
+
+sub action
+{
+    my $self = shift;
+    my $game = shift;
+    my $subject = shift;
+    my $arg = shift;
+    $arg = uc($arg);
+    my ( $target ) = $self->get_targets($game, $subject, $arg);
+    if($arg =~ /^D$/)
+    {
+        $game->log($subject->name . " disangaging from " . $target->name . " useing " . $self->name);
+        $game->move($subject, $target, 'farther');
+        $game->log($target->name . " now " . $game->get_distance($target, $subject) . " for " . $subject->name); 
+    }
+    elsif($arg =~ /^C (.*)$/)
+    {
         $game->log($subject->name . " gets near " . $target->name . " using " . $self->name);  
         $game->move($subject, $target, 'closer');
         $game->log($target->name . " now " . $game->get_distance($target, $subject) . " for " . $subject->name); 

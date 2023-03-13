@@ -1336,6 +1336,10 @@ sub play_command
             @targets = ( $data->{subject_2} );
         }
     }
+    elsif($data->{command} eq 'device')
+    {
+        @targets = $data->{device}->get_targets($self, $data->{subject_1}, $data->{arg});
+    }
     $data->{targets} = \@targets;
 
     my $throw = undef;
