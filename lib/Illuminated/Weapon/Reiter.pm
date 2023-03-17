@@ -11,7 +11,7 @@ around BUILDARGS => sub {
     name => 'reiter',
     type => 'rifle',
     try_type => 'mind',
-    range => [ 'far' ],
+    range => [ 'far', 'above' ],
     damage => 1
   });
 };

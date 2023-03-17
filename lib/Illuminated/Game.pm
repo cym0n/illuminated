@@ -354,6 +354,10 @@ sub standard_commands
     {
         return $self->disengage();
     }
+    elsif($answer eq 'L')
+    {
+        return $self->land($arg);
+    }
     return 0;
 }
 
@@ -603,8 +607,12 @@ sub get_distance
     my $self = shift;
     my $a = shift;
     my $b = shift;
+    if($self->on_ground($a) && $self->on_ground($a)->tag eq $b->tag)
+    {
+        return 'on surface';
+    }
     my ($player, $foe) = $self->detect_player_foe($a, $b);
-    if( ($self->on_ground($player) && $self->on_ground($foe) && $self->on_ground($player) eq $self->on_ground($foe)) || #On the same ground
+    if( ($self->on_ground($player) && $self->on_ground($foe) && $self->on_ground($player)->tag eq $self->on_ground($foe)->tag) || #On the same ground
         ( ! $self->on_ground($player) && ! $self->on_ground($foe)) ) #Both in space
     {
         return $self->distance_matrix->{$player->tag}->{$foe->tag}
@@ -934,15 +942,28 @@ sub execute_foe
     }
     elsif($command eq 'pursuit')
     {
-        $self->log($foe->name . " flyes to the " . $target->name . "!");
-        $data = {
-            subject_1 => $foe,
-            subject_2 => $target,
-            direction => 'closer',
-            try_type => undef,
-            command => 'fly_closer',
-            call => 'play_move',
-        };
+        if($self->get_distance($foe, $target) eq 'above')
+        {
+            $data = {
+                subject_1 => $foe,
+                location => $self->on_ground($target),
+                try_type => undef,
+                command => 'land',
+                call => 'play_land',
+            };
+        }
+        else
+        {
+            $self->log($foe->name . " flyes to the " . $target->name . "!");
+            $data = {
+                subject_1 => $foe,
+                subject_2 => $target,
+                direction => 'closer',
+                try_type => undef,
+                command => 'fly_closer',
+                call => 'play_move',
+            };
+        }
     }
     elsif($command eq 'parry')
     {
@@ -1245,13 +1266,53 @@ sub fly_away
         foreach my $f ( @targets )
         {
             my $d = $self->get_distance($self->active_player, $f);
-            if($d ne 'far' && $d ne 'none')
+            if($d eq 'near')
             {
                 $self->assign_action_point($f);
             }
         }
     }
     return 1;
+}
+
+sub land
+{
+    my $self = shift;
+    my $where = shift;
+    my $place = $self->get_other($where);
+
+    #Preconditions
+    if(! $place) { $self->log("$where doesn't exists"); return 0 }
+    if(! $place->ground) { $self->log("$where is not suitable for landing"); return 0 }
+    if($self->get_distance($self->active_player, $place) ne 'near') { $self->log("Impossible to land on $where. Distance is " . $self->get_distance($self->active_player, $place)); return 0 }
+
+    #Data
+    my $data = {
+        subject_1 => $self->active_player,
+        location => $place,
+        try_type => 'speed',
+        command => 'land',
+        call => 'play_land',
+    };
+
+    #Announcement
+    $self->log("Landing on $where");
+    
+    #Action
+    my $outcome = $self->play_command($data);
+    if($outcome == 2)
+    {
+        $self->log("Successfully landed on $where!");
+    }
+    elsif($outcome == 1)
+    {
+        $self->log("Landed on $where with consequences!");
+    }
+    elsif($outcome == 0)
+    {
+        $self->log("Failed to land on $where!");
+    }
+    return 1;    
 }
 
 sub disengage
@@ -1482,6 +1543,26 @@ sub play_move
     else
     {
         $self->move($data->{subject_1}, $data->{subject_2}, $data->{direction});
+    }
+}
+
+sub play_land
+{
+    my $self = shift;
+    my $data = shift;
+
+    if($data->{'outcome'} == 2)
+    {
+        $self->set_ground($data->{subject_1}, $data->{location});
+    }
+    elsif($data->{'outcome'} == 1)
+    {
+        $self->set_ground($data->{subject_1}, $data->{location});
+        $self->assign_action_point(undef);
+    }
+    elsif($data->{'outcome'} == 0)
+    {
+        $self->assign_action_point(undef);
     }
 }
 
