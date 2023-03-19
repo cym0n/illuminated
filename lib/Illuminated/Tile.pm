@@ -21,7 +21,10 @@ has others => (
     is => 'ro',
     default => sub { [] }
 );
-
+has end_turn_action_points => (
+    is => 'ro',
+    default => 1
+);
 
 sub gate_run
 {

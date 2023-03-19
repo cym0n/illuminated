@@ -281,7 +281,6 @@ sub run
     { 
         if(! $self->current_tile->entered)
         {
-            $self->log("Entering tile phase");
             $self->current_tile->init($self);
             $self->reset_player_counter();
             while($self->active_player && $self->running)
@@ -303,7 +302,6 @@ sub run
         }
         else
         {
-            $self->log("combat phase");
             while($self->active_player && $self->running)
             {
                 $self->log("\nACTIVE PLAYER: " . $self->active_player->name);
@@ -325,7 +323,8 @@ sub run
             }
             if($self->running)
             {
-                $self->assign_action_point();
+                $self->log("\nFOES TURN");
+                for(my $i = 0; $i < $self->current_tile->end_turn_action_points; $i++) { $self->assign_action_point(); }
                 $self->foes_turn();
                 $self->end_condition(); 
                 $self->clock();
@@ -941,8 +940,8 @@ sub execute_foe
     }
     elsif($command eq 'attack')
     {
-        my $w = $foe->get_main_weapon();
-        $self->log($foe->name . " deals " . $w->damage . " to " . $target->name . "!");
+        my ( $w ) = $foe->get_weapons_by_range($self->get_distance($foe, $target));
+        $self->log($foe->name . " deals " . $w->damage . " damage to " . $target->name . " using " . $w->name . "!");
         $data = {
              subject_1 => $foe,
              subject_2 => $target,
@@ -1029,7 +1028,6 @@ sub assign_action_point
     }
     $self->log("Action point assigned to " . $foe->name);
     $foe->action_points($foe->action_points + 1);
-    $self->log("Action point given to: " . $foe->name);
 }
 sub foes_turn
 {

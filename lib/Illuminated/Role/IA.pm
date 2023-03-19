@@ -23,7 +23,7 @@ sub _standard_ia
     my $priority = shift || ['close', 'near', 'far', 'above'];
     my $command = undef;
     my $target = undef;
-    foreach my $distance (qw(close near far above))
+    foreach my $distance (@{$priority})
     {
         my @pls = $game->at_distance($self, $distance);
         @pls = grep {

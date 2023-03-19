@@ -20,14 +20,18 @@ has foes => (
     is => 'ro',
     default => sub { [ [ 'alpha',   'Illuminated::Element::Stand::Foe::Carrier' ], 
                        [ 'beta',   'Illuminated::Element::Stand::Foe::Carrier' ],
-                       [ 'gamma',   'Illuminated::Element::Stand::Foe::Carrier' ],
-                       [ 'delta',   'Illuminated::Element::Stand::Foe::Carrier' ],
+                       [ 'gamma',   'Illuminated::Element::Stand::Foe::Thug' ],
+                       [ 'delta',   'Illuminated::Element::Stand::Foe::Thug' ],
     ] }
 );
 
 has others => (
     is => 'ro',
     default => sub { [ [ 'tortuga', 'Illuminated::Element::SpaceStation' ] ] }
+);
+has end_turn_action_points => (
+    is => 'ro',
+    default => 2
 );
 
 sub gate_run

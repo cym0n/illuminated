@@ -94,5 +94,21 @@ sub file_only
     print {$fh} "$message\n";
     close($fh);
 }
+
+sub find_log
+{
+    my $self = shift;
+    my $message = shift;
+    my $stop = shift;
+    for(my $i = -1; $i > $self->memory_log_limit * -1; $i--)
+    {
+        my $log = $self->memory_log->[$i];
+        chomp $log;
+        last if($log eq $stop);
+        return 1 if($log eq $message);
+    }
+    return 0;
+}
+
 1;
 
