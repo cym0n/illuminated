@@ -204,6 +204,19 @@ sub ship_test
     return $game;
 }
 
+sub station_test
+{
+    my $package = shift;
+
+    my $game = $package->init_test('station_game', 
+                                    [6, 6, 6, 6, 6, 6, 6, 6],
+                                    [], 
+                                    ['A', 'A', 'quit']);
+    $game->run();
+    $game->log("========== SHIP TEST GENERATION ENDED ==============");
+    return $game;
+}
+
 sub one_tile
 {
     my $self = shift;

@@ -18,7 +18,11 @@ has interface_options => (
 );
 has foes => (
     is => 'ro',
-    default => sub { [ [ 'alpha',   'Illuminated::Element::Stand::Foe::Thug' ], ] }
+    default => sub { [ [ 'alpha',   'Illuminated::Element::Stand::Foe::Carrier' ], 
+                       [ 'beta',   'Illuminated::Element::Stand::Foe::Carrier' ],
+                       [ 'gamma',   'Illuminated::Element::Stand::Foe::Carrier' ],
+                       [ 'delta',   'Illuminated::Element::Stand::Foe::Carrier' ],
+    ] }
 );
 
 has others => (
