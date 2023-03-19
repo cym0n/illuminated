@@ -49,10 +49,6 @@ sub suitable
     }
     return 1;
 }
-sub description
-{
-    my $self = shift;
-    return $self->name . " (" . $self->type . ")";
-}
+
 
 1;

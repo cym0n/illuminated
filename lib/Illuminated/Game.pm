@@ -6,6 +6,7 @@ use Data::Dumper;
 use Illuminated::Weapon;
 use Illuminated::Weapon::Balthazar;
 use Illuminated::Weapon::Caliban;
+use Illuminated::Weapon::Gospel;
 use Illuminated::Device::Jammer;
 use Illuminated::Device::SwarmGun;
 use Illuminated::Device::CoriolisThruster;
@@ -230,7 +231,8 @@ sub one_tile
     $player->add_device(Illuminated::Device::FleuretThruster->new());
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon::Balthazar->new());
-    $player->add_weapon(Illuminated::Weapon::Caliban->new());
+    #$player->add_weapon(Illuminated::Weapon::Caliban->new());
+    $player->add_weapon(Illuminated::Weapon::Gospel->new());
     $player->add_device(Illuminated::Device::SwarmGun->new());
     $player->add_device(Illuminated::Device::CoriolisThruster->new());
     $self->current_tile($tile);
@@ -413,7 +415,7 @@ sub interface_preconditions
                 last;
             }
         }
-        @ranges = qw( far near );
+        @ranges = qw( far near above);
     }
     my %already = ();
     my $i = 1;

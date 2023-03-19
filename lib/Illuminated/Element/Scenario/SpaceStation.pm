@@ -50,15 +50,5 @@ sub suitable
     }
     return 1;
 }
-sub description
-{
-    my $self = shift;
-    return $self->name . " (" . $self->type . ")";
-}
-sub calculate_effects
-{
-    my $self = shift;
-    return;
-}
 
 1;

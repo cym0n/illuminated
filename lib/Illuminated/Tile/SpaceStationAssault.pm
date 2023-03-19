@@ -36,6 +36,22 @@ has end_turn_action_points => (
     default => 2
 );
 
+around init => sub {
+    my $orig = shift;
+    my $self = shift;
+    my $game = shift;
+    $self->$orig($game);
+    my $airlock = $game->add_other(Illuminated::Element::Scenario->new({
+            name => 'airlock',
+            health => 20,
+            type => 'space station component',
+        }));
+    my $space_station =  $game->get_other('tortuga');
+    $game->set_far_from_all($airlock);
+    $game->set_ground($airlock, $space_station);
+    $airlock->activate_status('roof');
+};
+
 sub gate_run
 {
     my $self = shift;
@@ -55,15 +71,7 @@ sub gate_run
             my $obj = $game->get_other($o->[0]);
             $obj->setup($game);
         }
-        my $airlock = $game->add_other(Illuminated::Element::Scenario->new({
-            name => 'airlock',
-            health => 20,
-            type => 'space station component',
-        }));
-        my $space_station =  $game->get_other('tortuga');
-        $game->set_far_from_all($airlock);
-        $game->set_ground($airlock, $space_station);
-        $airlock->activate_status('roof');
+       
         
         return 1;
     }
