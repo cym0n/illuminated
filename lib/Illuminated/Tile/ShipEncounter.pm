@@ -35,7 +35,7 @@ has foes => (
 
 has others => (
     is => 'ro',
-    default => sub { [ [ 'joyful sacrifice', 'Illuminated::Element::Ship' ] ] }
+    default => sub { [ [ 'joyful sacrifice', 'Illuminated::Element::Scenario::Ship' ] ] }
 );
 
 sub gate_run

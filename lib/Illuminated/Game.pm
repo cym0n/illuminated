@@ -493,6 +493,7 @@ sub add_foe
     {
         $self->set_distance($_, $f, 'none');
     }
+    return $f;
 }
 
 sub add_other
@@ -500,14 +501,24 @@ sub add_other
     my $self = shift;
     my $name = shift;
     my $other_package = shift;
-    eval("require $other_package");
-    die $@ if $@;
-    my $f = $other_package->new($name);
+    my $f = undef;
+    if(ref($name))
+    {
+        $f = $name;
+    }
+    else
+    {
+        eval("require $other_package");
+        die $@ if $@;
+        $f = $other_package->new($name);
+    }
     push @{$self->others}, $f;
     foreach(@{$self->players})
     {
         $self->set_distance($_, $f, 'none');
     }
+    return $f;
+
 }
 sub get_foe
 {

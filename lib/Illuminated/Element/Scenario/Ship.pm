@@ -1,8 +1,8 @@
-package Illuminated::Element::Ship;
+package Illuminated::Element::Scenario::Ship;
 
 use v5.10;
 use Moo;
-extends 'Illuminated::Element';
+extends 'Illuminated::Element::Scenario';
 
 has game_type => (
     is => 'lazy'
@@ -53,11 +53,6 @@ sub description
 {
     my $self = shift;
     return $self->name . " (" . $self->type . ")";
-}
-sub calculate_effects
-{
-    my $self = shift;
-    return;
 }
 
 1;

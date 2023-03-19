@@ -4,6 +4,8 @@ use v5.10;
 use Moo;
 extends 'Illuminated::Tile';
 
+use Illuminated::Element::Scenario;
+
 
 has interface_header => (
     is => 'rw',
@@ -27,7 +29,7 @@ has foes => (
 
 has others => (
     is => 'ro',
-    default => sub { [ [ 'tortuga', 'Illuminated::Element::SpaceStation' ] ] }
+    default => sub { [ [ 'tortuga', 'Illuminated::Element::Scenario::SpaceStation' ] ] }
 );
 has end_turn_action_points => (
     is => 'ro',
@@ -53,6 +55,16 @@ sub gate_run
             my $obj = $game->get_other($o->[0]);
             $obj->setup($game);
         }
+        my $airlock = $game->add_other(Illuminated::Element::Scenario->new({
+            name => 'airlock',
+            health => 20,
+            type => 'space station component',
+        }));
+        my $space_station =  $game->get_other('tortuga');
+        $game->set_far_from_all($airlock);
+        $game->set_ground($airlock, $space_station);
+        $airlock->activate_status('roof');
+        
         return 1;
     }
 }

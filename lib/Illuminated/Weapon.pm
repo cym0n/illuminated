@@ -19,6 +19,8 @@ has damage => (
     is => 'ro'
 );
 
+with 'Illuminated::Role::StatusHolder';
+
 sub good_for_range
 {
     my $self = shift;

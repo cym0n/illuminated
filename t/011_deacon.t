@@ -34,7 +34,7 @@ $game->configure_scenario([6, 6, 6], [12],
     [ 'F joyful sacrifice', 'F joyful sacrifice',
     'quit']);
 $game->run;
-is($game->memory_log->[-7], 'Arabelle use device: drain', 'Arabelle use device: drain');
+ok($game->find_log('Arabelle use device: drain', "=== RUN ==="),'Arabelle use device: drain');
 is($p1->energy, 4, "Energy of " . $p1->name . " drained");
 is($p2->energy, 4, "Energy of " . $p2->name . " drained");
 is($deacon->energy, 2, "Energy of " . $deacon->name . " used");
@@ -53,7 +53,7 @@ $game->configure_scenario([6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5], [12, 12],
     [ 'A1 Arabelle', 'A1', 'F Arabelle',
     'quit']);
 $game->run();
-is($game->memory_log->[-7], 'Arabelle use device: drain', 'Arabelle use device: drain');
+ok($game->find_log('Arabelle use device: drain', "=== RUN ==="),'Arabelle use device: drain');
 is($p1->energy, 3, "Energy of " . $p1->name . " drained");
 is($p2->energy, 3, "Energy of " . $p2->name . " drained");
 is($deacon->energy, 1, "Energy of " . $deacon->name . " used");

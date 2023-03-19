@@ -1,8 +1,8 @@
-package Illuminated::Element::SpaceStation;
+package Illuminated::Element::Scenario::SpaceStation;
 
 use v5.10;
 use Moo;
-extends 'Illuminated::Element';
+extends 'Illuminated::Element::Scenario';
 
 has game_type => (
     is => 'lazy'
