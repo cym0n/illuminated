@@ -969,13 +969,28 @@ sub execute_foe
     {
         if($self->get_distance($foe, $target) eq 'above')
         {
-            $data = {
-                subject_1 => $foe,
-                location => $self->on_ground($target),
-                try_type => undef,
-                command => 'land',
-                call => 'play_land',
-            };
+            if($self->get_distance($foe, $self->on_ground($target)) eq 'far')
+            {
+                $data = {
+                    subject_1 => $foe,
+                    subject_2 => $self->on_ground($target),
+                    direction => 'closer',
+                    try_type => undef,
+                    command => 'fly_closer',
+                    call => 'play_move',
+                };
+            }
+            elsif($self->get_distance($foe, $self->on_ground($target)) eq 'near')
+            {
+                $self->log($foe->name . ": pursuit from above");
+                $data = {
+                    subject_1 => $foe,
+                    location => $self->on_ground($target),
+                    try_type => undef,
+                    command => 'land',
+                    call => 'play_land',
+                };
+            }
         }
         else
         {

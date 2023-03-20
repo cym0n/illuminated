@@ -6,6 +6,11 @@ extends 'Illuminated::Element';
 
 with 'Illuminated::Role::StatusHolder';
 
+has game_type => (
+    is => 'ro',
+    default => 'other',
+);
+
 sub description
 {
     my $self = shift;

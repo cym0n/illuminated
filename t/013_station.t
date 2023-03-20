@@ -31,6 +31,9 @@ ok($game->find_log($log, "=== RUN ==="), $log);
 is($p1->health, 5, "Paladin got five damages");
 is($p2->health, 5, "Templar got five damages");
 
+diag("Paladin and Templar shooting airlock while thugs chase them");
+$game->configure_scenario([4, 4, 4, 4, 4, 4], [2, 0, 3, 1, 2, 3], ['C airlock', 'C airlock', 'quit']);
+$game->run;
 
 
 is($game->random_dice_counter, 0, "No real dice");
