@@ -46,20 +46,31 @@ sub interface
 {
     my $self = shift;
     my $game = shift;
+    my $log = shift;
     $self->interface_preconditions($game);
     $game->screen_only($self->interface_header);
-    $self->print_options($game);;
-    print "Choose: ";
+    $self->print_options($game, $log);;
+    print "Choose: " if ! $log;
 }
 sub print_options
 {
     my $self = shift;
     my $game = shift;
+    my $log = shift;
     for(@{$self->interface_options})
     {
-        $game->screen_only($_->[1]);
+        if($log)
+        {
+            $game->log($_->[1]);
+        }
+        else
+        {
+            $game->screen_only($_->[1]);
+        }
     }
 }
+
+
 sub choice
 {
     my $self = shift;

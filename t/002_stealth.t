@@ -23,7 +23,7 @@ foreach my $f (@{$game->foes})
 {
     is($f->aware, 1, $f->name . " is aware");
 }
-is($game->memory_log->[-3], "Bad option", "S is a bad option for second player");
+is($game->memory_log->[-4], "Bad option", "S is a bad option for second player");
 
 diag("Stealth badly failed by second player, first player all foes far");
 $game = Illuminated::Game->init_test('standard_game', [6, 1, 1, 1, ((4) x 9)], [], ['S', 'S', 'quit']);

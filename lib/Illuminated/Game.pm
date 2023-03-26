@@ -50,7 +50,8 @@ has interface_header => (
 has system_options => (
     is => 'rw',
     default => sub { [
-        ['(QUIT)', "Exit game"]
+        ['(QUIT)', "Exit game"],
+        ['(INTERFACE)', "Interface"]
     ] }
 );
 has interface_options => (
@@ -160,12 +161,21 @@ sub configure_scenario
     my $loaded_dice = shift;
     my $fake_random = shift;
     my $auto_commands = shift;
+    my $title = shift;
     $self->loaded_dice($loaded_dice);
     $self->loaded_dice_counter(0);
     $self->auto_commands($auto_commands);
     $self->auto_commands_counter(0);
     $self->fake_random($fake_random);
     $self->fake_random_counter(0);
+    if($title)
+    {
+        $self->log("\n##### $title #####")
+    }
+    else
+    {
+        $self->log("\n");
+    }
     $self->running(1);
 }
 
@@ -231,8 +241,8 @@ sub one_tile
     $player->add_device(Illuminated::Device::FleuretThruster->new());
     $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
     $player->add_weapon(Illuminated::Weapon::Balthazar->new());
-    #$player->add_weapon(Illuminated::Weapon::Caliban->new());
-    $player->add_weapon(Illuminated::Weapon::Gospel->new());
+    $player->add_weapon(Illuminated::Weapon::Caliban->new());
+    #$player->add_weapon(Illuminated::Weapon::Gospel->new());
     $player->add_device(Illuminated::Device::SwarmGun->new());
     $player->add_device(Illuminated::Device::CoriolisThruster->new());
     $self->current_tile($tile);
@@ -334,6 +344,7 @@ sub run
             }
         }
     }
+    $self->log("Random dice: " . $self->random_dice_counter . " Random numbers: " . $self->true_random_counter);
 }
 
 sub standard_commands
@@ -385,6 +396,11 @@ sub system_commands
         $self->log("Player quitted");
         $self->running(0);
         return 1;
+    }
+    elsif($answer eq 'INTERFACE')
+    {
+        $self->log("------- Logging interface...");
+        $self->interface($self, 1);
     }
     return 0;
 }
@@ -969,28 +985,15 @@ sub execute_foe
     {
         if($self->get_distance($foe, $target) eq 'above')
         {
-            if($self->get_distance($foe, $self->on_ground($target)) eq 'far')
-            {
-                $data = {
-                    subject_1 => $foe,
-                    subject_2 => $self->on_ground($target),
-                    direction => 'closer',
-                    try_type => undef,
-                    command => 'fly_closer',
-                    call => 'play_move',
-                };
-            }
-            elsif($self->get_distance($foe, $self->on_ground($target)) eq 'near')
-            {
-                $self->log($foe->name . ": pursuit from above");
-                $data = {
-                    subject_1 => $foe,
-                    location => $self->on_ground($target),
-                    try_type => undef,
-                    command => 'land',
-                    call => 'play_land',
-                };
-            }
+            #Foes can always land on grounds, no need to get near
+            $self->log($foe->name . ": pursuit from above");
+            $data = {
+                subject_1 => $foe,
+                location => $self->on_ground($target),
+                try_type => undef,
+                command => 'land',
+                call => 'play_land',
+            };
         }
         else
         {
