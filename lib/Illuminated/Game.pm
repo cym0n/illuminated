@@ -381,7 +381,14 @@ sub standard_commands
     }
     elsif($answer eq 'L')
     {
-        return $self->land($arg);
+        if($self->on_ground($self->active_player))
+        {
+            return $self->lift();
+        }
+        else
+        {
+            return $self->land($arg);
+        }
     }
     return 0;
 }
@@ -423,12 +430,19 @@ sub interface_preconditions
         $self->interface_header("Combat zone");
         push @options, ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"];
         push @options, ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"];
-        foreach my $o ($game->at_distance($game->active_player, 'near'))
+        if($self->on_ground($game->active_player))
         {
-            if($o->ground)
+            push @options, ['^(L)$', "[L]ift (power try)"];
+        }
+        else
+        {
+            foreach my $o ($game->at_distance($game->active_player, 'near'))
             {
-                push @options, ['^(L)( (.*))?$', "[L]and (speed try)"];
-                last;
+                if($o->ground)
+                {
+                    push @options, ['^(L)( (.*))?$', "[L]and (speed try)"];
+                    last;
+                }
             }
         }
         @ranges = qw( far near above);
@@ -1321,9 +1335,11 @@ sub land
 {
     my $self = shift;
     my $where = shift;
-    my $place = $self->get_other($where);
+
 
     #Preconditions
+    if(! $where) { $self->log("No where"); return 0 }
+    my $place = $self->get_other($where);
     if(! $place) { $self->log("$where doesn't exists"); return 0 }
     if(! $place->ground) { $self->log("$where is not suitable for landing"); return 0 }
     if($self->get_distance($self->active_player, $place) ne 'near') { $self->log("Impossible to land on $where. Distance is " . $self->get_distance($self->active_player, $place)); return 0 }
@@ -1355,6 +1371,45 @@ sub land
         $self->log("Failed to land on $where!");
     }
     return 1;    
+}
+
+sub lift
+{
+    my $self = shift;
+
+    #Preconditions
+    my $where = $self->on_ground($self->active_player);
+    if(! $where) { $self->log("Player not on the ground"); return 0 }
+
+    $where = $where->name;
+    
+    #Data
+    my $data = {
+        subject_1 => $self->active_player,
+        try_type => 'power',
+        command => 'lift',
+        call => 'play_lift',
+    };
+
+    #Announcement
+    $self->log("Lifting from $where");
+
+    #Action
+    my $outcome = $self->play_command($data);
+    if($outcome == 2)
+    {
+        $self->log("Successfully lifted from $where!");
+    }
+    elsif($outcome == 1)
+    {
+        $self->log("Lifted from $where with consequences!");
+    }
+    elsif($outcome == 0)
+    {
+        $self->log("Failed to lift from $where!");
+    }
+    return 1;    
+    
 }
 
 sub disengage
@@ -1600,6 +1655,26 @@ sub play_land
     elsif($data->{'outcome'} == 1)
     {
         $self->set_ground($data->{subject_1}, $data->{location});
+        $self->assign_action_point(undef);
+    }
+    elsif($data->{'outcome'} == 0)
+    {
+        $self->assign_action_point(undef);
+    }
+}
+
+sub play_lift
+{
+    my $self = shift;
+    my $data = shift;
+
+    if($data->{'outcome'} == 2)
+    {
+        $self->set_ground($data->{subject_1}, undef);
+    }
+    elsif($data->{'outcome'} == 1)
+    {
+        $self->set_ground($data->{subject_1}, undef);
         $self->assign_action_point(undef);
     }
     elsif($data->{'outcome'} == 0)
