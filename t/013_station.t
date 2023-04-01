@@ -15,6 +15,7 @@ $game->run;
 
 my $p1 = $game->players->[0];
 my $p2 = $game->players->[1];
+my $alpha = $game->foes->[0];
 my $gamma = $game->foes->[2];
 my $delta = $game->foes->[3];
 my $airlock = $game->others->[1];
@@ -39,7 +40,12 @@ is($game->on_ground($p2)->name, 'tortuga', $p2->name . " is on tortuga");
 diag("Paladin and Templar shooting airlock while thugs chase them");
 $game->configure_scenario([4, 4, 4, 4, 4, 4], [2, 0, 3, 1, 2, 3], ['C airlock', 'C airlock', 'quit']);
 $game->run;
-is($game->on_ground($gamma)->name, 'tortuga', $gamma->name . " is on tortuga");
+my $gamma_ground = $game->on_ground($gamma);
+my $delta_ground = $game->on_ground($delta);
+ok($gamma_ground, $gamma->name . " landed");
+ok($delta_ground, $gamma->name . " landed");
+is($gamma_ground->name, 'tortuga', $gamma->name . " landed on tortuga");
+is($delta_ground->name, 'tortuga', $delta->name . " landed on tortuga");
 is($game->on_ground($delta)->name, 'tortuga', $delta->name . " is on tortuga");
 is($game->get_distance($gamma, $p1), 'near', $p1->name . " is near to " . $gamma->name);
 is($game->get_distance($delta, $p2), 'near', $p2->name . " is near to " . $delta->name);
@@ -50,6 +56,16 @@ $game->run;
 is($p1->health, 4, "Paladin got 1 damage");
 is($p2->health, 4, "Templar got 1 damage");
 is($airlock->health, 18, "Airlock got 2 damage");
+
+diag("Paladin and Templar lift away from tortuga (with and without consequences)");
+$game->configure_scenario([6, 6, 6, 4], [0, 2, 3], ['L', 'L', 'quit']);
+$game->run;
+ok(! $game->on_ground($p1), $p1->name . " is not on the ground any more");
+ok(! $game->on_ground($p2), $p2->name . " is not on the ground any more");
+is($p1->health, 3, "Paladin got 1 damage");
+is($game->get_distance($p1, $alpha), "near", $alpha->name . " is near to ". $p1->name); 
+ok(! $game->on_ground($gamma), $gamma->name . " is not on the ground any more (pursuit of player)");
+ok(! $game->on_ground($delta), $delta->name . " is not on the ground any more (pursuit of player)");
 
 is($game->random_dice_counter, 0, "No real dice");
 is($game->true_random_counter, 0, "No true random numbers");

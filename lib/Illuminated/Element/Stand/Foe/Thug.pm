@@ -33,7 +33,8 @@ sub strategy
     return $self->_standard_ia($game, { 'close' => 'away',
                                         'near'  => 'attack',
                                         'far'   => 'pursuit',
-                                        'above'   => 'pursuit' }); 
+                                        'above'   => 'pursuit',
+                                        'below' => 'pursuit' }); 
 }
 
 

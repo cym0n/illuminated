@@ -1000,13 +1000,24 @@ sub execute_foe
         if($self->get_distance($foe, $target) eq 'above')
         {
             #Foes can always land on grounds, no need to get near
-            $self->log($foe->name . ": pursuit from above");
+            $self->log($foe->name . ": pursuit from above (landing)");
             $data = {
                 subject_1 => $foe,
                 location => $self->on_ground($target),
                 try_type => undef,
                 command => 'land',
                 call => 'play_land',
+            };
+        }
+        elsif($self->get_distance($foe, $target) eq 'below')
+        {
+            #Foes can always land on grounds, no need to get near
+            $self->log($foe->name . ": pursuit from below (lifting)");
+            $data = {
+                subject_1 => $foe,
+                try_type => undef,
+                command => 'lift',
+                call => 'play_lift',
             };
         }
         else
@@ -1049,6 +1060,10 @@ sub execute_foe
              command => 'device',
              call => 'play_device',
         };
+    }
+    else
+    {
+        $self->log($foe->name . ": command is " . $command);
     }
     if($data)
     {

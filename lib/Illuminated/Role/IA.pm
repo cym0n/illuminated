@@ -20,7 +20,7 @@ sub _standard_ia
     my $self = shift;
     my $game = shift;
     my $c = shift;
-    my $priority = shift || ['close', 'near', 'far', 'above'];
+    my $priority = shift || ['close', 'near', 'far', 'below', 'above'];
     my $command = undef;
     my $target = undef;
     foreach my $distance (@{$priority})
