@@ -30,5 +30,21 @@ has mind => (
     is => 'ro',
 );
 
+sub get_cover
+{
+    my $self = shift;
+    $self->cover($self->cover + 1);
+}
+sub no_cover
+{
+    my $self = shift;
+    $self->cover(0);
+}
+sub can_cover
+{
+    my $self = shift;
+    return ( $self->cover < $self->mind ) && (! $self->has_status('no-cover') )
+}
+
 1;
 

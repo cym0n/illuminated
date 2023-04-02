@@ -211,4 +211,20 @@ sub suitable
     return 1;
 }
 
+sub get_cover
+{
+    my $self = shift;
+    $self->cover(1);
+}
+sub no_cover
+{
+    my $self = shift;
+    $self->cover(0);
+}
+sub can_cover
+{
+    my $self = shift;
+    return ! $self->has_status('no-cover')
+}
+
 1;

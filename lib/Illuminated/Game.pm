@@ -390,6 +390,10 @@ sub standard_commands
             return $self->land($arg);
         }
     }
+    elsif($answer eq 'V')
+    {
+        return $self->cover($arg);
+    }
     return 0;
 }
 
@@ -433,6 +437,10 @@ sub interface_preconditions
         if($self->on_ground($game->active_player))
         {
             push @options, ['^(L)$', "[L]ift (power try)"];
+            if($game->active_player->can_cover())
+            {
+                push @options, ['^(V)$', "Co[V]er (turns covering to now: " . $game->active_player->cover . ")"];
+            }
         }
         else
         {
@@ -662,11 +670,17 @@ sub get_distance
     my $self = shift;
     my $a = shift;
     my $b = shift;
+    my $on_grid = shift;
+    
     if($self->on_ground($a) && $self->on_ground($a)->tag eq $b->tag)
     {
         return 'on surface';
     }
     my ($player, $foe) = $self->detect_player_foe($a, $b);
+    if($on_grid)
+    {
+        return $self->distance_matrix->{$player->tag}->{$foe->tag}
+    }
     if( ($self->on_ground($player) && $self->on_ground($foe) && $self->on_ground($player)->tag eq $self->on_ground($foe)->tag) || #On the same ground
         ( ! $self->on_ground($player) && ! $self->on_ground($foe)) ) #Both in space
     {
@@ -1074,20 +1088,44 @@ sub execute_foe
 sub assign_action_point
 {
     my $self = shift;
-    my $foe = shift;
-    $self->log("Trying to assign action point to " . $foe->name) if $foe;
-    if($foe && $foe->game_type ne 'foe')
+    my $who = shift;
+    my @foes;
+    if(! $who)
     {
-        $self->log($foe->name . " not a foe");
-        $foe = undef;
+        @foes = ( undef );
     }
-    if(! $foe || ! $foe->active)
+    elsif(! ref($who) eq 'ARRAY')
     {
-        $self->log("Action point assigned random");
-        $foe = $self->foes->[$self->game_rand('assigning action point', $self->foes)];
+        @foes = ( $who );
     }
-    $self->log("Action point assigned to " . $foe->name);
-    $foe->action_points($foe->action_points + 1);
+    else
+    {
+        @foes = @{$who};
+    }
+
+    foreach my $foe (@foes)
+    {
+        if($foe)
+        {
+            $self->log("Trying to assign action point to " . $foe->name)
+        }
+        else
+        {
+            $self->log("Assigning action point random");
+        }
+        if($foe && $foe->game_type ne 'foe')
+        {
+            $self->log($foe->name . " not a foe");
+            $foe = undef;
+        }
+        if(! $foe || ! $foe->active)
+        {
+            $self->log("Action point assigned random");
+            $foe = $self->foes->[$self->game_rand('assigning action point', $self->foes)];
+        }
+        $self->log("Action point assigned to " . $foe->name);
+        $foe->action_points($foe->action_points + 1);
+    }   
 }
 sub foes_turn
 {
@@ -1267,13 +1305,12 @@ sub fly_closer
     {
         $self->log("Successful approach with consequences");
         $self->log($any->name . " now " . $self->get_distance($self->active_player, $any) . " for " . $self->active_player->name);
-        $self->assign_action_point($any);
     }
     elsif($outcome == 0)
     {
         $self->log("Failed to approach!");
-        $self->assign_action_point($any);
     }
+    $self->assign_action_point($data->{reaction});
     return 1;
 }
 
@@ -1325,24 +1362,17 @@ sub fly_away
         {
             my $d = $self->get_distance($self->active_player, $f);
             $self->log($f->name . " now " . $self->get_distance($self->active_player, $f) . " for " . $self->active_player->name); 
-            if($f->action_points > 0)
-            {
-                $self->log($f->name . " has " . $f->action_points . " action points");
-            }
         }
     }
     elsif($outcome == 0)
     {
-        $self->log("Failed to escape! (all enemies gain an action point");
+        $self->log("Failed to escape! (some enemies gain an action point");
         foreach my $f ( @targets )
         {
             my $d = $self->get_distance($self->active_player, $f);
-            if($d eq 'near')
-            {
-                $self->assign_action_point($f);
-            }
         }
     }
+    $self->assign_action_point($data->{reaction});
     return 1;
 }
 
@@ -1385,6 +1415,7 @@ sub land
     {
         $self->log("Failed to land on $where!");
     }
+    $self->assign_action_point($data->{reaction});
     return 1;    
 }
 
@@ -1423,6 +1454,7 @@ sub lift
     {
         $self->log("Failed to lift from $where!");
     }
+    $self->assign_action_point($data->{reaction});
     return 1;    
     
 }
@@ -1459,13 +1491,12 @@ sub disengage
     elsif($outcome == 1)
     {
         $self->log("Disengaged with consequences");
-        $self->assign_action_point($foe);
     }
     elsif($outcome == 0)
     {
         $self->log("Disengaging failed!");
-        $self->assign_action_point($foe);
     }
+    $self->assign_action_point($data->{reaction});
     return 1;
 }
 
@@ -1517,13 +1548,12 @@ sub attack_foe
     elsif($outcome == 1)
     {
         $self->log("Successful attack with consequences!");
-        $self->assign_action_point($foe);
     }
     elsif($outcome == 0)
     {
         $self->log("Attack failed!");
-        $self->assign_action_point($foe);
     }
+    $self->assign_action_point($data->{reaction});
     return 1;
 }
 
@@ -1556,11 +1586,40 @@ sub use_device
     my $outcome = $self->play_command($data);
     
     #No need to check outcome, always 2
+    #No need to assign reaction action points
 
     return 1;
 }
 
+sub cover
+{
+    my $self = shift;
 
+    #Preconditions
+    if(! $self->on_ground($self->active_player)) { $self->log("Player not on the ground"); return 0 }
+    if(! $self->active_player->can_cover) { $self->log("Player can't cover"); return 0 }
+
+    #Data
+    my $data = {
+        subject_1 => $self->active_player,
+        try_type => undef,
+        command => 'cover',
+        call => 'play_cover',
+    };
+
+    #Action
+    my $outcome = $self->play_command($data);
+    if($outcome == 2)
+    {
+        $self->log($self->active_player->name . " gets cover");
+    }
+    else
+    {
+        #Can't fail
+    }
+    #No need to assign reaction action points
+    return 1;    
+}
 
 # Commands support subs
 
@@ -1606,9 +1665,10 @@ sub play_command
     }
     else
     {
-        return 0; #failure
+        $outcome = 0; #failure
     }
     $data->{outcome} = $outcome;
+    $data->{reaction} = [];
     $self->calculate_effects("before " . $data->{command}, $data);
     my $call = $data->{call};
     $self->$call($data) if $call;
@@ -1620,41 +1680,73 @@ sub play_move
 {
     my $self = shift;
     my $data = shift;
-    if(ref($data->{subject_2}) eq 'ARRAY')
+
+    my $just_one = 0;
+    my @targets;
+
+    if( ! (ref($data->{subject_2}) eq 'ARRAY') )
     {
-        if($data->{direction} eq 'farther')
-        {
-            foreach my $f ( @{$data->{subject_2}} )
+        @targets = ( $data->{subject_2} );
+    }
+    else
+    {
+        @targets = @{$data->{subject_2}};
+    }
+    $just_one = ( int(@targets) == 1 );
+
+    foreach my $f ( @targets )
+    {
+        my $d = $self->get_distance($data->{subject_1}, $f, 1);
+        $self->log("Move " . $data->{subject_1}->name . " to " . $f->name . " " . $data->{direction} . " " . $self->get_distance($data->{subject_1}, $f, 1));
+        if( ( ($d eq 'close' || $d eq 'near') && $data->{direction} eq 'farther') ||
+            ( ($d eq 'far'   || $d eq 'near') && $data->{direction} eq 'closer' )
+          )
+        { 
+            if($data->{'outcome'} == 2)
             {
-                my $d = $self->get_distance($data->{subject_1}, $f);
-                if($d ne 'far' && $d ne 'none')
-                { 
-                    if($data->{'outcome'} == 2)
+                $self->move($data->{subject_1}, $f, $data->{direction});
+            }
+            elsif($data->{'outcome'} == 1)
+            {
+                if($just_one)
+                {
+                    $self->move($data->{subject_1}, $f, $data->{direction});
+                    push @{$data->{reaction}}, $f;
+                }
+                else
+                {
+                    my $throw = $self->dice(1);
+                    if($throw >= 5)
                     {
-                        $self->move($data->{subject_1}, $f, 'farther');
+                        $self->move($data->{subject_1}, $f, $data->{direction});
+                    }
+                    elsif($throw >= 3)
+                    {
+                        $self->move($data->{subject_1}, $f, $data->{direction});
+                        push @{$data->{reaction}}, $f;
                     }
                     else
                     {
-                        my $throw = $self->dice(1);
-                        if($throw >= 5)
-                        {
-                            $self->move($data->{subject_1}, $f, 'farther');
-                        }
-                        elsif($throw >= 3)
-                        {
-                        }
-                        else
-                        {
-                            $self->assign_action_point($f);
-                        }
+                        push @{$data->{reaction}}, $f;
+                    }
+                }
+            }
+            elsif($data->{'outcome'} == 0)
+            {
+                if($just_one)
+                {
+                    push @{$data->{reaction}}, $f;
+                }
+                else
+                {
+                    my $throw = $self->dice(1);
+                    if($throw < 5)
+                    {
+                        push @{$data->{reaction}}, $f;
                     }
                 }
             }
         }
-    }
-    else
-    {
-        $self->move($data->{subject_1}, $data->{subject_2}, $data->{direction});
     }
 }
 
@@ -1670,11 +1762,11 @@ sub play_land
     elsif($data->{'outcome'} == 1)
     {
         $self->set_ground($data->{subject_1}, $data->{location});
-        $self->assign_action_point(undef);
+        push @{$data->{reaction}}, undef;
     }
     elsif($data->{'outcome'} == 0)
     {
-        $self->assign_action_point(undef);
+        push @{$data->{reaction}}, undef;
     }
 }
 
@@ -1690,11 +1782,11 @@ sub play_lift
     elsif($data->{'outcome'} == 1)
     {
         $self->set_ground($data->{subject_1}, undef);
-        $self->assign_action_point(undef);
+        push @{$data->{reaction}}, undef;
     }
     elsif($data->{'outcome'} == 0)
     {
-        $self->assign_action_point(undef);
+        push @{$data->{reaction}}, undef;
     }
 }
 
@@ -1702,7 +1794,19 @@ sub play_harm
 {
     my $self = shift;
     my $data = shift;
-    $self->harm($data->{subject_1}, $data->{subject_2}, $data->{damage});
+    if($data->{outcome} == 2)
+    {
+        $self->harm($data->{subject_1}, $data->{subject_2}, $data->{damage});
+    }
+    elsif($data->{outcome} == 1)
+    {
+        $self->harm($data->{subject_1}, $data->{subject_2}, $data->{damage});
+        push @{$data->{reaction}}, $data->{subject_2};
+    }
+    elsif($data->{outcome} == 0)
+    {
+        push @{$data->{reaction}}, $data->{subject_2};
+    }
 }
 
 sub play_device
@@ -1710,6 +1814,12 @@ sub play_device
     my $self = shift;
     my $data = shift;
     $self->device($data->{subject_1}, $data->{device}, $data->{arg});
+}
+sub play_cover
+{
+    my $self = shift;
+    my $data = shift;
+    $data->{subject_1}->get_cover();
 }
 
 1;

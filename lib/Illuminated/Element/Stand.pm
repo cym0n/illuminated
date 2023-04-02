@@ -15,6 +15,10 @@ has devices => (
     is => 'ro',
     default => sub { [] }
 );
+has cover => (
+    is => 'rw',
+    default => 0
+);
 
 with 'Illuminated::Role::StatusHolder';
 
@@ -87,8 +91,14 @@ sub calculate_effects
     my $event = shift;
     my $data = shift;
     
-    #$game->log("Stand " . $self->name . " processing event: $event");
-
+    if($event =~ /^before (.*)$/)
+    {
+        if($data->{subject_1}->tag eq $self->tag && $1 ne 'cover' && $data->{subject_1}->cover)
+        {
+            $game->log($data->{subject_1}->name . " leaves cover!");
+            $data->{subject_1}->no_cover();
+        }
+    }
     if($event eq 'before attack')
     {
         if($data->{subject_2}->tag eq $self->tag && $data->{weapon}->type eq 'sword' && $self->has_status('parry'))
@@ -104,6 +114,15 @@ sub calculate_effects
         {
             $game->log($data->{subject_1}->name . " disengaging, but " . $self->name . " has grab");
             push @{$data->{dice_mods}}, '1max -1';
+        }
+    }
+    elsif($event eq 'after fly_closer')
+    {   
+        if($game->get_distance($data->{subject_1}, $data->{subject_2}) eq 'close' && $data->{subject_2}->cover)
+        {
+            $data->{subject_2}->no_cover;
+            $data->{subject_2}->activate_status('no-cover', 3);
+            $game->log($data->{subject_2}->name . " cover broken!");
         }
     }
 }
