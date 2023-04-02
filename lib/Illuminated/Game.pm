@@ -1105,14 +1105,6 @@ sub assign_action_point
 
     foreach my $foe (@foes)
     {
-        if($foe)
-        {
-            $self->log("Trying to assign action point to " . $foe->name)
-        }
-        else
-        {
-            $self->log("Assigning action point random");
-        }
         if($foe && $foe->game_type ne 'foe')
         {
             $self->log($foe->name . " not a foe");
@@ -1697,7 +1689,6 @@ sub play_move
     foreach my $f ( @targets )
     {
         my $d = $self->get_distance($data->{subject_1}, $f, 1);
-        $self->log("Move " . $data->{subject_1}->name . " to " . $f->name . " " . $data->{direction} . " " . $self->get_distance($data->{subject_1}, $f, 1));
         if( ( ($d eq 'close' || $d eq 'near') && $data->{direction} eq 'farther') ||
             ( ($d eq 'far'   || $d eq 'near') && $data->{direction} eq 'closer' )
           )
