@@ -37,7 +37,7 @@ sub strategy
                                         'far'   => 'pursuit',
                                         'above'   => 'attack',
                                         'below' => 'pursuit' },
-                                ['above', 'close', 'near', 'far', 'below']
+                                ['above', 'below', 'close', 'near', 'far']
     ); 
 }
 

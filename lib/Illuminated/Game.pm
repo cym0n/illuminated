@@ -907,6 +907,10 @@ sub game_rand
     if(exists $self->fake_random->[$self->fake_random_counter])
     {
         my $value = $self->fake_random->[$self->fake_random_counter];
+        if($value > $number+1)
+        {
+            die("Failing tampering random. $value > $number. Counter is: ". $self->fake_random_counter);
+        }
         $self->log("Random tampered. Range $number, result $value");
         $self->fake_random_counter($self->fake_random_counter + 1);    
         return $value;
