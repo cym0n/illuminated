@@ -22,6 +22,11 @@ sub _standard_ia
     my $priority = shift || ['close', 'near', 'far', 'below', 'above'];
     my $command = undef;
     my $target = undef;
+
+    if($game->at_distance($self, 'close'))
+    {
+        $priority = ['close'];
+    }
     foreach my $distance (@{$priority})
     {
         my @pls = $game->at_distance($self, $distance);

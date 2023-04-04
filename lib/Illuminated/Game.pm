@@ -977,6 +977,15 @@ sub execute_foe
     my $foe = shift;
     my $command = shift;
     my $target = shift;
+    
+    if($target)
+    {
+        $self->log('[IA] ' . $foe->name . ": $command " . $target->name);
+    }
+    else
+    {
+        $self->log('[IA] ' . $foe->name . ": $command");
+    }
 
     my $data = undef;
     if($command eq 'warn')
