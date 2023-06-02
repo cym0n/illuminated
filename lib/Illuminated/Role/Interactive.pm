@@ -58,6 +58,10 @@ sub auto
     }
     else
     {
+        if($self->ia_players)
+        {
+            return 'quit';
+        }
         return undef;
     }
 }

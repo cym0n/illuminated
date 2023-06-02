@@ -160,6 +160,7 @@ sub init_ia
     my $package = shift;
     my $game_start = shift;
     my $ia_string = shift;
+    my $counter = shift;
     my @chunks = ( $ia_string =~ m/../g );
     my @commands = ('N', 'N');
     for(@chunks)
@@ -169,7 +170,7 @@ sub init_ia
     my $game = Illuminated::Game->new(
         {   auto_commands => \@commands,
             ia_players => 1,
-            log_prefix => 'ia',
+            log_prefix => 'ia' . $counter,
             on_screen => 0,
         }
     );
@@ -1151,8 +1152,11 @@ sub assign_action_point
             $self->log("Action point assigned random");
             $foe = $self->foes->[$self->game_rand('assigning action point', $self->foes)];
         }
-        $self->log("Action point assigned to " . $foe->name);
-        $foe->action_points($foe->action_points + 1);
+        if($foe)
+        {
+            $self->log("Action point assigned to " . $foe->name);
+            $foe->action_points($foe->action_points + 1);
+        }
     }   
 }
 sub foes_turn
