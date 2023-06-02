@@ -10,20 +10,25 @@ use Getopt::Long;
 my $ia;
 my $length = 100;
 my $tries = 1;
-GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries); 
+my $generations = 1;
+my $to_print = 'a';
+GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries, "gens=i" => \$generations, "to-print=s" => \$to_print); 
 my $game_type = shift || 'standard_game';
 
 my $start_enemies;
 if($ia)
 {
-    say "Generating random IA string";
-    my $string = ia_string($length);
-    for(my $i = 0; $i < $tries; $i++)
+    for(my $j = 0; $j < $generations; $j++)
     {
-        my $game = Illuminated::Game->init_ia($game_type, $string);
-        $start_enemies = int(@{$game->foes});
-        $game->run();
-        ia_report($game);
+        say "\nGenerating random IA string number $j";
+        my $string = ia_string($length);
+        for(my $i = 0; $i < $tries; $i++)
+        {
+            my $game = Illuminated::Game->init_ia($game_type, $string, $i);
+            $start_enemies = int(@{$game->foes});
+            $game->run();
+            ia_report($game);
+        }
     }
 }
 else
@@ -50,19 +55,30 @@ sub ia_string
 sub ia_report
 {
     my $game = shift;
-    say "-------";
     if(! @{$game->foes})
     {
+        return if $to_print eq 'd' || $to_print eq 'u';
+        say "-------";
         say "VICTORY SCENARIO";
         say "Turns played: " . $game->turn;
+        say "Log: " . $game->log_name;
+        return;
     }
     if(! @{$game->players})
     {
+        return if $to_print eq 'v' || $to_print eq 'u';
+        say "-------";
         say "DEFEAT SCENARIO";
         say "Turns played: " . $game->turn;
         say "Enemies still alive: " . int(@{$game->foes}) . "/" . int(@{$game->current_tile->foes});
-        say "IA miss: " . $game->ia_miss;
-        say "Bad options: " . $game->bad_options;
-    }    
+        say "Log: " . $game->log_name;
+        return;
+    }
+    return if $to_print eq 'v' || $to_print eq 'd';
+    say "-------";
+    say "UNFINISHED SCENARIO";
+    say "Turns played: " . $game->turn;
+    say "Enemies still alive: " . int(@{$game->foes}) . "/" . int(@{$game->current_tile->foes});
+    say "Log: " . $game->log_name;
 }
 
