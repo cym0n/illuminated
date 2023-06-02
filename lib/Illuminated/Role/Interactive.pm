@@ -25,6 +25,15 @@ has ia_players => (
     default => 0,
 );
 
+has ia_miss => (
+    is => 'rw',
+    default => 0,
+);
+has bad_options => (
+    is => 'rw',
+    default => 0,
+);
+
 sub auto
 {
     my $self = shift;
@@ -35,7 +44,12 @@ sub auto
         $game->auto_commands_counter($game->auto_commands_counter + 1);    
         if($self->ia_players)
         {
-            return $self->process_ia_command($game, $value);
+            my $ia_value = $self->process_ia_command($game, $value);
+            if($ia_value eq '???')
+            {
+                $game->ia_miss($game->ia_miss + 1);
+            }
+            return $ia_value;
         }
         else
         {
@@ -196,6 +210,7 @@ sub choice
         }
     }
     $game->log("Bad option");
+    $game->bad_options($game->bad_options + 1);
     return undef;
 }
 
