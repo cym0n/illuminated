@@ -155,6 +155,28 @@ sub init_test
     return $game;
 }
 
+sub init_ia
+{
+    my $package = shift;
+    my $game_start = shift;
+    my $ia_string = shift;
+    my @chunks = ( $ia_string =~ m/../g );
+    my @commands = ('N', 'N');
+    for(@chunks)
+    {
+        push @commands, '@' . $_;
+    }
+    my $game = Illuminated::Game->new(
+        {   auto_commands => \@commands,
+            ia_players => 1,
+            log_prefix => 'ia',
+        }
+    );
+    $game->$game_start;
+    $game->log("IA STRING: $ia_string");
+    return $game;
+}
+
 sub configure_scenario
 {
     my $self = shift;

@@ -52,7 +52,7 @@ $game->configure_scenario([6, 6], [1, 1], ['C alpha', 'V', 'quit']);
 $game->run;
 ok($p2->cover, $p2->name . " has cover");
 ok($game->find_log('beta: pursuit from below (lifting)', "=== RUN ==="), 'beta confused, following Paladin');
-ok($game->find_log('beta: pursuit from above (landing)', "=== RUN ==="), 'beta confused, following Templat');
+ok($game->find_log('beta: pursuit from above (landing)', "=== RUN ==="), 'beta confused, following Templar');
 
 is($game->random_dice_counter, 0, "No real dice");
 is($game->true_random_counter, 0, "No true random numbers");
