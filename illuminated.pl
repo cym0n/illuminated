@@ -9,23 +9,26 @@ use Getopt::Long;
 
 my $ia;
 my $length = 100;
-GetOptions("ia" => \$ia, "length=i" => \$length); 
+my $tries = 1;
+GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries); 
 my $game_type = shift || 'standard_game';
 
-my $game;
 my $start_enemies;
 if($ia)
 {
     say "Generating random IA string";
     my $string = ia_string($length);
-    $game = Illuminated::Game->init_ia($game_type, $string);
-    $start_enemies = int(@{$game->foes});
-    $game->run();
-    ia_report($game);
+    for(my $i = 0; $i < $tries; $i++)
+    {
+        my $game = Illuminated::Game->init_ia($game_type, $string);
+        $start_enemies = int(@{$game->foes});
+        $game->run();
+        ia_report($game);
+    }
 }
 else
 {
-    $game = Illuminated::Game->new();
+    my $game = Illuminated::Game->new();
     $game->$game_type();
     $game->run();
 }

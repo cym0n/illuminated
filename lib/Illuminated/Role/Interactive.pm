@@ -67,8 +67,6 @@ sub process_ia_command
     my $game = shift;
     my $command = shift;
     
-    say "IA command: $command";
-
     if($command =~ /^@/)
     {
         $command =~ s/^@//;
@@ -160,7 +158,7 @@ sub interface
     $self->interface_preconditions($game);
     $game->screen_only($self->interface_header);
     $self->print_options($game, $log);;
-    print "Choose: " if ! $log;
+    print "Choose: " if (! $log && $game->on_screen);
 }
 sub print_options
 {

@@ -170,6 +170,7 @@ sub init_ia
         {   auto_commands => \@commands,
             ia_players => 1,
             log_prefix => 'ia',
+            on_screen => 0,
         }
     );
     $game->$game_start;
