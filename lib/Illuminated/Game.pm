@@ -52,6 +52,7 @@ has system_options => (
     default => sub { [
         ['(QUIT)', "Exit game"],
         ['(INTERFACE)', "Interface"],
+        ['(SAVE)', "save"],
         ['(DUMP)( (.*))', "Dump"]
     ] }
 );
@@ -136,6 +137,7 @@ has player_templates => (
 
 with 'Illuminated::Role::Interactive';
 with 'Illuminated::Role::Logger';
+with 'Illuminated::Role::Recorder';
 
 sub init_test
 {
@@ -448,6 +450,10 @@ sub system_commands
             return 0;
         }
         $self->log(Dumper($obj->dump()));
+    }
+    elsif($answer eq 'SAVE')
+    {
+        $self->write_all('test.csv');
     }
     return 0;
 }
