@@ -41,6 +41,15 @@ sub suitable
     my $self = shift;
     return 1;
 }
+sub dump
+{
+    my $self = shift;
+    return {
+        name => $self->name,
+        type => $self->type,
+        health => $self->health,
+    }
+}
 
 
 1;

@@ -51,7 +51,8 @@ has system_options => (
     is => 'rw',
     default => sub { [
         ['(QUIT)', "Exit game"],
-        ['(INTERFACE)', "Interface"]
+        ['(INTERFACE)', "Interface"],
+        ['(DUMP)( (.*))', "Dump"]
     ] }
 );
 has interface_options => (
@@ -436,6 +437,17 @@ sub system_commands
     {
         $self->log("------- Logging interface...");
         $self->interface($self, 1);
+    }
+    elsif($answer eq 'DUMP')
+    {
+        my $obj = $self->get_player($arg);
+        $obj = $self->get_foe($arg) if ! $obj;
+        if(! $obj)
+        {
+            $self->log("$arg is a wrong target"); 
+            return 0;
+        }
+        $self->log(Dumper($obj->dump()));
     }
     return 0;
 }

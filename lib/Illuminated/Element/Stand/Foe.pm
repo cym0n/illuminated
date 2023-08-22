@@ -226,5 +226,18 @@ sub can_cover
     my $self = shift;
     return ! $self->has_status('no-cover')
 }
+around dump => sub 
+{
+    my $orig = shift;
+    my $self = shift;
+    my $game = shift;
+    my $event = shift;
+    my $data = shift;
+    my $out = $self->$orig();
+    $out->{aware} = $self->aware;
+    $out->{focus} = $self->focus;
+    $out->{action_points} = $self->action_points;
+    return $out;
+};
 
 1;

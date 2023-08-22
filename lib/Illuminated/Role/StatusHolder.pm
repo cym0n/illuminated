@@ -65,4 +65,23 @@ sub counters_clock
     }
 }
 
+sub status_dump
+{
+    my $self = shift;
+    my $out = {};
+    foreach my $s (@{$self->status})
+    {
+        if(exists $self->status_counter->{$s})
+        {
+            $out->{$s} = $self->status_counter->{$s};
+        }
+        else
+        {
+            $out->{$s} = undef;
+        }
+    }
+    return $out;
+}
+
+
 1;

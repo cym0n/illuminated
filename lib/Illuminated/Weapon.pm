@@ -39,4 +39,11 @@ sub calculate_effects
 {
 }
 
+sub dump
+{
+    my $self = shift;
+    return { name => $self->name,
+             status => $self->status_dump };
+}
+
 1;

@@ -126,6 +126,26 @@ sub calculate_effects
         }
     }
 }
+around dump => sub 
+{
+    my $orig = shift;
+    my $self = shift;
+    my $game = shift;
+    my $event = shift;
+    my $data = shift;
+    my $out = $self->$orig();
+    $out->{energy} = $self->energy;
+    $out->{cover} = $self->cover;
+    $out->{status} = $self->status_dump;
+    my @weapons = ();
+    foreach my $w (@{$self->weapons})
+    {
+        push @weapons, $w->dump();
+    }
+    $out->{weapons} = \@weapons;
+    return $out;
+};
+    
 
 
 1;
