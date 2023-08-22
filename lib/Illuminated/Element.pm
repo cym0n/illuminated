@@ -45,6 +45,7 @@ sub dump
 {
     my $self = shift;
     return {
+        class => ref($self),
         name => $self->name,
         type => $self->type,
         health => $self->health,

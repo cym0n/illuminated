@@ -143,6 +143,12 @@ around dump => sub
         push @weapons, $w->dump();
     }
     $out->{weapons} = \@weapons;
+    my @devices = ();
+    foreach my $d (@{$self->devices})
+    {
+        push @devices, ref($d);
+    }
+    $out->{devices} = \@devices;
     return $out;
 };
     
