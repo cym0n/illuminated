@@ -12,7 +12,8 @@ my $length = 100;
 my $tries = 1;
 my $generations = 1;
 my $to_print = 'a';
-GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries, "gens=i" => \$generations, "to-print=s" => \$to_print); 
+my $load = undef;
+GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries, "gens=i" => \$generations, "to-print=s" => \$to_print, "load=s" => \$load); 
 my $game_type = shift || 'standard_game';
 
 my $start_enemies;
@@ -34,8 +35,16 @@ if($ia)
 else
 {
     my $game = Illuminated::Game->new();
-    $game->$game_type();
-    $game->run();
+    if($load)
+    {
+        $game->load($load);
+        $game->run();
+    }
+    else
+    {
+        $game->$game_type();
+        $game->run();
+    }
 }
 
 sub ia_string

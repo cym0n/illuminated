@@ -437,13 +437,17 @@ sub add_foe
     my $self = shift;
     my $name = shift;
     my $foe_package = shift;
+    my $no_distance = shift;
     eval("require $foe_package");
     die $@ if $@;
     my $f = $foe_package->new($name);
     push @{$self->foes}, $f;
-    foreach(@{$self->players})
+    unless($no_distance)
     {
-        $self->set_distance($_, $f, 'none');
+        foreach(@{$self->players})
+        {
+            $self->set_distance($_, $f, 'none');
+        }
     }
     return $f;
 }

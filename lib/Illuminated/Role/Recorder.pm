@@ -4,12 +4,17 @@ use strict;
 use v5.10;
 
 use Moo::Role;
+use Data::Dumper;
 
 requires 'distance_matrix';
 requires 'ground_position';
 requires 'dump';
 requires 'players';
 requires 'foes';
+requires 'add_player';
+requires 'player_templates';
+requires 'add_foe';
+requires 'init_log';
 
 my $dump_version = 1;
 
@@ -117,5 +122,117 @@ sub write_status
             print {$io} $s ."," . $status->{$s}
         }
         print {$io} "#### END STATUS\n";
+    }
+}
+
+sub load
+{
+    my $self = shift;
+    my $savefile = shift;
+
+    $self->init_log;
+
+    open(my $io, "< $savefile");
+    my $version;
+    my $subsection = undef;
+    my $obj = undef;
+    for(<$io>)
+    {
+        chomp;
+        my $line = $_;
+        if(! $subsection)
+        {
+            if($line =~ /^####### V(.*)$/)
+            {
+                $version = $1;
+                if($version != $dump_version)
+                {
+                    say "WARNING: Dump of version $version";
+                }
+                next;
+            }
+            elsif($line =~ /^GAME;/)
+            {
+                my @data = split(";", $line);
+                eval("require $data[1]");
+                my $tile = $data[1]->new();
+                $tile->entered(1);
+                $self->current_tile($tile);
+                $self->active_player_counter($data[2]);
+                $self->active_player_device_chance($data[3]);
+                $self->turn($data[4]);
+            }
+            elsif($line =~ /^### DISTANCE MATRIX$/)
+            {
+                $subsection = 'distance matrix';
+            }
+            elsif($line =~ /^### GROUND POSITION$/)
+            {
+                $subsection = 'ground position';
+            }
+            elsif($line =~ /^### PLAYER$/)
+            {
+                $subsection = 'player';
+            }
+            elsif($line =~ /^### FOE$/)
+            {
+                $subsection = 'foe';
+            }
+        }
+        else
+        {
+            if($line =~ /^### END/)
+            {
+                $subsection = undef;
+                $obj = undef;
+            }
+            else
+            {
+                my @data = split(";", $line);
+                if($subsection eq 'distance matrix')
+                {
+                    $self->distance_matrix->{$data[0]}->{$data[1]} = $data[2];
+                }
+                elsif($subsection eq 'ground position')
+                {
+                    $self->ground_position->{$data[0]} = $data[1];
+                }
+                elsif($subsection eq 'player')
+                {
+                    if($data[0] eq 'DATA')
+                    {
+                        $obj = $self->add_player($data[2], $data[3], $self->player_templates->{$data[3]});
+                        $obj->health($data[4]);
+                        $obj->energy($data[5]);
+                    }
+                    elsif($data[0] eq 'WEAPON')
+                    {
+                        eval("require $data[1]");
+                        $obj->add_weapon($data[1]->new());
+                    }
+                    elsif($data[0] eq 'DEVICES')
+                    {
+                        for(my $i = 1; $i < scalar @data; $i++)
+                        {
+                            eval("require $data[$i]");
+                            $obj->add_device($data[$i]->new());
+                        }
+                    }
+                }
+                elsif($subsection eq 'foe')
+                {
+                    if($data[0] eq 'DATA')
+                    {
+                        $obj = $self->add_foe($data[2], $data[1], 1);
+                        $obj->health($data[4]);
+                        $obj->energy($data[5]);
+                        $obj->cover($data[6]);
+                        $obj->aware($data[7]);
+                        $obj->action_points($data[8]);
+                        $obj->focus($data[9]);
+                    }
+                }
+            }
+        }
     }
 }
