@@ -42,37 +42,6 @@ has ground_position => (
     is => 'ro',
     default => sub { {} }
 );
-
-has interface_header => (
-    is => 'rw',
-    default => "Combat zone"
-);
-has system_options => (
-    is => 'rw',
-    default => sub { [
-        ['(QUIT)', "Exit game"],
-        ['(INTERFACE)', "Interface"],
-        ['(SAVE)', "save"],
-        ['(DUMP)( (.*))', "Dump"]
-    ] }
-);
-has interface_options => (
-    is => 'rw',
-    default => sub {  [ 
-        ['(S)( (.*))?', "[S]ituation"], 
-        ['(A)( (.*))',  "[A]ttack enemy (mind try)"], 
-        ['(C)( (.*))',  "[C]lose on enemy (speed try)"], 
-        ['(F)( (.*))', "[F]ly away from enemies (speed try)"], 
-    ] }
-);
-has interface_weapons => (
-    is => 'rw',
-    default => sub { {} }
-);
-has interface_devices => (
-    is => 'rw',
-    default => sub { {} }
-);
 has active_player_counter => (
     is => 'rw',
     default => 0
@@ -81,30 +50,7 @@ has active_player_device_chance => (
     is => 'rw',
     default => 1
 );
-has loaded_dice => (
-    is => 'rw',
-    default => sub { [] }
-);
-has loaded_dice_counter => (
-    is => 'rw',
-    default => 0
-);
-has random_dice_counter => (
-    is => 'rw',
-    default => 0
-);
-has fake_random => (
-    is => 'rw',
-    default => sub { [] }
-);
-has fake_random_counter => (
-    is => 'rw',
-    default => 0
-);
-has true_random_counter => (
-    is => 'rw',
-    default => 0
-);
+
 has turn => (
     is => 'rw',
     default => 0
@@ -133,10 +79,9 @@ has player_templates => (
     } }
 );
 
-
-
-with 'Illuminated::Role::Interactive';
+with 'Illuminated::Role::Interactive::Game';
 with 'Illuminated::Role::Logger';
+with 'Illuminated::Role::Destiny';
 with 'Illuminated::Role::Recorder';
 
 sub init_test
@@ -458,82 +403,7 @@ sub system_commands
     return 0;
 }
 
-sub interface_preconditions
-{
-    my $self = shift;
-    my $game = shift;
 
-    my @options = (  ['^(S)( (.*))?$', "[S]ituation"] );
-    my @ranges;
-    if($game->at_distance($game->active_player, 'close'))
-    {
-        $self->interface_header("Combat zone - close combat");
-        push @options, ['^(D)$', "[D]isengage (power try)"]; 
-        @ranges = qw( close );
-    }
-    else
-    {
-        $self->interface_header("Combat zone");
-        push @options, ['^(C)( (.*))$',  "[C]lose on enemy (speed try)"];
-        push @options, ['^(F)( (.*))?$', "[F]ly away from enemies (speed try)"];
-        if($self->on_ground($game->active_player))
-        {
-            push @options, ['^(L)$', "[L]ift (power try)"];
-            if($game->active_player->can_cover())
-            {
-                push @options, ['^(V)$', "Co[V]er (turns covering to now: " . $game->active_player->cover . ")"];
-            }
-        }
-        else
-        {
-            foreach my $o ($game->at_distance($game->active_player, 'near'))
-            {
-                if($o->ground)
-                {
-                    push @options, ['^(L)( (.*))?$', "[L]and (speed try)"];
-                    last;
-                }
-            }
-        }
-        @ranges = qw( far near above);
-    }
-    my %already = ();
-    my $i = 1;
-    my %weapons_mapping = ();
-    my %devices_mapping = ();
-    foreach my $d (@ranges)
-    {
-        if($game->at_distance($game->active_player, $d))
-        {
-            my @weaps = $game->active_player->get_weapons_by_range($d);
-            foreach my $w (@weaps)
-            {
-                if(! exists $already{$w->name})
-                {
-                    push @options, ['^(A' . $i. ')( (.*))?$', "[A" . $i . "]ttack enemy with " . $w->name . " (" . $w->try_type . " try)"];
-                    $weapons_mapping{'A' . $i} = $w->name;
-                    $i++
-                }
-            }
-        }
-    }
-    $i = 1;
-    if($self->active_player_device_chance)
-    {
-        foreach my $d(@{$self->active_player->devices})
-        {
-            if($d->preconditions($self, $self->active_player))
-            {
-                push @options, ['^(P' . $i. ')( (.*))?$', "[P" . $i . "]ower: " . $d->name];
-                $devices_mapping{'P' . $i} = $d->name;
-                $i++;
-            }
-        }
-    }
-    $game->interface_options(\@options);
-    $game->interface_weapons(\%weapons_mapping);
-    $game->interface_devices(\%devices_mapping);
-}
 
 sub add_player
 {
@@ -914,105 +784,6 @@ sub unaware_foe
     return @unw;
 }
 
-sub throw_loaded_die
-{
-    my $self = shift;
-    if($self->loaded_dice->[$self->loaded_dice_counter])
-    {
-        my $value = $self->loaded_dice->[$self->loaded_dice_counter];
-        $self->loaded_dice_counter($self->loaded_dice_counter + 1);    
-        return $value;
-    }
-    else
-    {
-        return undef;
-    }
-
-}
-
-sub game_rand
-{
-    my $self = shift;
-    my $reason = shift;
-    my $seed = shift;;
-    my $number = undef;
-    if(ref($seed) eq 'ARRAY')
-    {
-        $number = @{$seed};
-    }
-    else
-    {
-        $number = $seed;
-    }
-
-    $self->file_only("Random evoked, range $number, reason $reason");
-    if(exists $self->fake_random->[$self->fake_random_counter])
-    {
-        my $value = $self->fake_random->[$self->fake_random_counter];
-        if($value > $number+1)
-        {
-            die("Failing tampering random. $value > $number. Counter is: ". $self->fake_random_counter);
-        }
-        $self->log("Random tampered. Range $number, result $value");
-        $self->fake_random_counter($self->fake_random_counter + 1);    
-        return $value;
-    }
-    else
-    {
-        $self->true_random_counter($self->true_random_counter + 1);
-        return int(rand $number);
-    }
-
-}
-
-
-sub dice
-{
-    my $self = shift;
-    my $many = shift;
-    my $silent = shift;
-    my $mods = shift;
-    my $sides = 6;
-    my $result = 0;
-    my @throws = ();
-    my $out;
-
-    for(my $i = 0; $i < $many; $i++)
-    {
-        my $throw;
-        if(my $loaded = $self->throw_loaded_die())
-        {   
-            $self->log("Loaded die");
-            $throw = $loaded;
-        }
-        else
-        {
-            $throw = int(rand(6)) + 1;
-            $self->random_dice_counter($self->random_dice_counter + 1);
-        }
-        push @throws, $throw;
-    }
-    foreach my $m (@{$mods})
-    {
-        if($m eq '1max -1')
-        {
-            @throws = sort @throws;
-            $throws[-1] = $throws[-1] -1;
-        }
-    }
-    for(@throws) { $result = $_ if($result < $_) }
-
-    #$result = $throw if($throw > $result);
-    if($silent)
-    {
-        $self->file_only("Dice throw: " . join (" ", @throws) . " => " . $result);
-    }
-    else
-    {
-        $self->log("Dice throw: " . join (" ", @throws) . " => " . $result);
-    }
-    return $result;
-}
 sub execute_foe
 {
     my $self = shift;
