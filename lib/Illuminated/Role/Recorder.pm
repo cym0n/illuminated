@@ -5,6 +5,9 @@ use v5.10;
 
 use Moo::Role;
 
+requires 'distance_matrix';
+requires 'ground_position';
+requires 'dump';
 requires 'players';
 requires 'foes';
 
@@ -17,6 +20,9 @@ sub write_all
     return "No file provided" if ! $savefile;
     open(my $io, "> $savefile");
     print {$io} "####### V$dump_version\n";
+    $self->write_game($io);
+    $self->write_distance_matrix($io);
+    $self->write_ground_position($io);
     for(@{$self->players})
     {
         $self->write_player($_->dump, 'PLAYER', $io);
@@ -27,6 +33,40 @@ sub write_all
     }
     close($io);
 }
+sub write_game
+{
+    my $self = shift;
+    my $game = $self->dump;
+    my $io = shift;  
+    print {$io} "GAME;" . join(";", $game->{current_tile}, $game->{active_player_counter}, $game->{active_player_device_chance}, $game->{turn}) . "\n";
+}
+sub write_distance_matrix
+{
+    my $self = shift;
+    my $io = shift;
+    print {$io} "### DISTANCE MATRIX\n";
+    foreach my $i (keys %{$self->distance_matrix})
+    {
+        foreach my $j (keys %{$self->{distance_matrix}->{$i}})
+        {
+            print {$io} join(";", $i, $j, $self->{distance_matrix}->{$i}->{$j}) . "\n"
+        }
+    }
+    print {$io} "### END DISTANCE MATRIX\n";
+}
+sub write_ground_position
+{
+    my $self = shift;
+    my $io = shift;
+    print {$io} "### GROUND POSITION\n";
+    foreach  my $i (keys %{$self->ground_position})
+    {
+        print {$io} join(";", $i, $self->ground_position->{$i});
+    } 
+    print {$io} "### END GROUND POSITION\n";
+}
+
+
 
 sub write_player
 {

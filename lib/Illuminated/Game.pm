@@ -1642,4 +1642,17 @@ sub play_cover
     $data->{subject_1}->get_cover();
 }
 
+
+sub dump
+{
+    my $self = shift;
+
+    return {
+        current_tile => ref($self->current_tile),
+        active_player_counter => $self->active_player_counter,
+        active_player_device_chance => $self->active_player_device_chance,
+        turn => $self->turn
+    }
+}
+
 1;
