@@ -16,21 +16,34 @@ my $load = undef;
 GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries, "gens=i" => \$generations, "to-print=s" => \$to_print, "load=s" => \$load); 
 my $game_type = shift || 'standard_game';
 
+my %games = (
+    'standard_game' => 'Illuminated::Tile::GuardedSpace',
+    'ship_game' => 'Illuminated::Tile::ShipEncounter',
+    'station_game' => 'Illuminated::Tile::SpaceStationAssault'
+);
+
 my $start_enemies;
 if($ia)
 {
+    my %counters = ( 'v' => 0,
+                     's' => 0,
+                     'u' => 0 );
     for(my $j = 0; $j < $generations; $j++)
     {
         say "\nGenerating random IA string number $j";
         my $string = ia_string($length);
         for(my $i = 0; $i < $tries; $i++)
         {
-            my $game = Illuminated::Game->init_ia($game_type, $string, $i);
-            $start_enemies = int(@{$game->foes});
+            my $game = Illuminated::Game->init_ia($games{$game_type}, $string, $i, $load);
             $game->run();
-            ia_report($game);
+            my $outcome = ia_report($game);
+            $counters{$outcome} = $counters{$outcome} + 1;
         }
     }
+    say "=======";
+    say "VICTORIES: " . $counters{'v'};
+    say "DEFEATS: " . $counters{'s'};
+    say "UNFINISHED: " . $counters{'u'};
 }
 else
 {
@@ -42,7 +55,7 @@ else
     }
     else
     {
-        $game->$game_type();
+        $game->one_tile($games{$game_type});
         $game->run();
     }
 }
@@ -66,28 +79,29 @@ sub ia_report
     my $game = shift;
     if(! @{$game->foes})
     {
-        return if $to_print eq 'd' || $to_print eq 'u';
+        return 'v' if $to_print eq 'd' || $to_print eq 'u';
         say "-------";
         say "VICTORY SCENARIO";
         say "Turns played: " . $game->turn;
         say "Log: " . $game->log_name;
-        return;
+        return 'v';
     }
     if(! @{$game->players})
     {
-        return if $to_print eq 'v' || $to_print eq 'u';
+        return 's' if $to_print eq 'v' || $to_print eq 'u';
         say "-------";
         say "DEFEAT SCENARIO";
         say "Turns played: " . $game->turn;
         say "Enemies still alive: " . int(@{$game->foes}) . "/" . int(@{$game->current_tile->foes});
         say "Log: " . $game->log_name;
-        return;
+        return 's';
     }
-    return if $to_print eq 'v' || $to_print eq 'd';
+    return 'u' if $to_print eq 'v' || $to_print eq 'd';
     say "-------";
     say "UNFINISHED SCENARIO";
     say "Turns played: " . $game->turn;
     say "Enemies still alive: " . int(@{$game->foes}) . "/" . int(@{$game->current_tile->foes});
     say "Log: " . $game->log_name;
+    return 'u'
 }
 

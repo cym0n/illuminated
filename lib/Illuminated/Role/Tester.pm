@@ -63,9 +63,10 @@ sub load_test
 sub init_ia
 {
     my $package = shift;
-    my $game_start = shift;
+    my $tile = shift;
     my $ia_string = shift;
     my $counter = shift;
+    my $load = shift;
     my @chunks = ( $ia_string =~ m/../g );
     my @commands = ('N', 'N');
     for(@chunks)
@@ -79,7 +80,14 @@ sub init_ia
             on_screen => 0,
         }
     );
-    $game->$game_start;
+    if($load)
+    {
+        $game->load($load);
+    }
+    else
+    {
+        $game->one_tile($tile);
+    }
     $game->log("IA STRING: $ia_string");
     return $game;
 }
