@@ -14,7 +14,7 @@ has system_options => (
     default => sub { [
         ['(QUIT)', "Exit game"],
         ['(INTERFACE)', "Interface"],
-        ['(SAVE)', "save"],
+        ['(SAVE)( (.*))', "save"],
         ['(DUMP)( (.*))', "Dump"]
     ] }
 );

@@ -234,7 +234,11 @@ sub system_commands
     }
     elsif($answer eq 'SAVE')
     {
-        $self->write_all('test.csv');
+        if(! $arg)
+        {
+            $self->log("No file provided");
+        }
+        $self->write_all(lc($arg));
     }
     return 0;
 }
