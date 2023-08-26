@@ -8,7 +8,7 @@ use Illuminated::Game;
 my $game;
 
 diag("No strategy");
-$game = Illuminated::Game->standard_test();
+$game = Illuminated::Game->load_test('t/preco/v1/standard_test.csv');
 diag("Log file is: " . $game->log_name);
 
 

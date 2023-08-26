@@ -172,28 +172,11 @@ sub configure_scenario
     $self->running(1);
 }
 
-sub standard_test
-{
-    my $package = shift;
-
-    my $game = $package->init_test('standard_game', 
-                                    [6, 6, 6, 4, 2, 4, 2, 2, 2,
-                                     6, 6, 6, 4, 2, 4, 2, 2, 2,], 
-                                    [8, 4], 
-                                    ['N', 'N', 'quit']);
-    $game->run();
-    $game->log("========== STANDARD TEST GENERATION ENDED ==============");
-    return $game;
-}
-
 sub ship_test
 {
     my $package = shift;
 
     my $game = $package->init_test('ship_game', 
-#                                    [6, 6, 6, 4, 2, 4, 2, 2, 2,
-#                                     6, 6, 6, 4, 2, 4, 2, 2, 2, 
-#                                     6, 6, 6, 4, 2, 4], 
                                     [6, 6, 6, 6, 6, 6, 6, 6, 6,
                                      6, 6, 6, 6, 6, 6, 6, 6, 6, 
                                      6, 6, 6, 6, 6, 6], 
