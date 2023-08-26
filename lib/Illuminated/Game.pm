@@ -172,25 +172,6 @@ sub configure_scenario
     $self->running(1);
 }
 
-sub ship_test
-{
-    my $package = shift;
-
-    my $game = $package->init_test('ship_game', 
-                                    [6, 6, 6, 6, 6, 6, 6, 6, 6,
-                                     6, 6, 6, 6, 6, 6, 6, 6, 6, 
-                                     6, 6, 6, 6, 6, 6], 
-                                    [], 
-                                    ['G', 'G', 'quit']);
-    $game->run();
-    for(@{$game->foes})
-    {
-        $_->deactivate_status('guard X-joyful sacrifice');
-    }
-    $game->log("========== SHIP TEST GENERATION ENDED ==============");
-    return $game;
-}
-
 sub station_test
 {
     my $package = shift;
@@ -461,6 +442,7 @@ sub add_other
     my $self = shift;
     my $name = shift;
     my $other_package = shift;
+    my $no_distance = shift;
     my $f = undef;
     if(ref($name))
     {
@@ -473,12 +455,14 @@ sub add_other
         $f = $other_package->new($name);
     }
     push @{$self->others}, $f;
-    foreach(@{$self->players})
+    unless($no_distance)
     {
-        $self->set_distance($_, $f, 'none');
+        foreach(@{$self->players})
+        {
+            $self->set_distance($_, $f, 'none');
+        }
     }
     return $f;
-
 }
 sub get_foe
 {

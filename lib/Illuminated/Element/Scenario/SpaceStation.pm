@@ -10,7 +10,7 @@ has game_type => (
 sub _build_game_type
 {
     my $self = shift;
-    return 'ship'
+    return 'station'
 }
 
 around BUILDARGS => sub {

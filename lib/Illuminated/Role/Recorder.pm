@@ -16,6 +16,7 @@ requires 'player_templates';
 requires 'add_foe';
 requires 'init_log';
 requires 'log';
+requires 'add_other';
 
 my $dump_version = 1;
 
@@ -36,6 +37,10 @@ sub write_all
     for(@{$self->foes})
     {
         $self->write_player($_->dump, 'FOE', $io);
+    }
+    for(@{$self->others})
+    {
+        $self->write_player($_->dump, 'OTHER', $io);
     }
     close($io);
 }
@@ -81,10 +86,14 @@ sub write_player
     my $player_or_foe = shift;
     my $io = shift;
 
-    my @data = qw(class name type health energy cover);
+    my @data = qw(class name type health);
+    if($player_or_foe eq 'PLAYER')
+    {
+        @data = (@data, 'energy', 'cover');
+    }
     if($player_or_foe eq 'FOE')
     {
-        @data = (@data, 'aware', 'action_points', 'focus')
+        @data = (@data, 'energy', 'cover', 'aware', 'action_points', 'focus')
     }
     my @data_player = ();
     for(@data)
@@ -101,12 +110,15 @@ sub write_player
     print {$io} "### $player_or_foe\n";
     print {$io} "DATA;" . join(";", @data_player) . "\n";
     $self->write_status($player->{status}, $io);
-    foreach my $w (@{$player->{weapons}})
+    if($player_or_foe ne 'OTHER')
     {
-        print {$io} "WEAPON;" . join(";", $w->{class}, $w->{name}) . "\n";
-        $self->write_status($w->{status}, $io);
+        foreach my $w (@{$player->{weapons}})
+        {
+            print {$io} "WEAPON;" . join(";", $w->{class}, $w->{name}) . "\n";
+            $self->write_status($w->{status}, $io);
+        }
+        print {$io} "DEVICES;" . join(";", @{$player->{devices}}) . "\n"; 
     }
-    print {$io} "DEVICES;" . join(";", @{$player->{devices}}) . "\n"; 
     print {$io} "### END $player_or_foe\n";
 }
 
@@ -179,6 +191,10 @@ sub load
             {
                 $subsection = 'foe';
             }
+            elsif($line =~ /^### OTHER$/)
+            {
+                $subsection = 'other';
+            }
         }
         else
         {
@@ -231,6 +247,14 @@ sub load
                         $obj->aware($data[7] || 0);
                         $obj->action_points($data[8] || 0);
                         $obj->focus($data[9]);
+                    }
+                }
+                elsif($subsection eq 'other')
+                {
+                    if($data[0] eq 'DATA')
+                    {
+                        $obj = $self->add_other($data[2], $data[1], 1);
+                        $obj->health($data[4] || 0);
                     }
                 }
             }
