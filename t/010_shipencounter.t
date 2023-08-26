@@ -11,7 +11,7 @@ my $game;
 `rm -f t/tmp/*`;
 
 diag("No strategy");
-$game = Illuminated::Game->init_test('ship_game', 
+$game = Illuminated::Game->init_test('Illuminated::Tile::ShipEncounter', 
     [6, 6, 6, 6, 6, 6, 6, 6, 6,
      6, 6, 6, 6, 6, 6, 6, 6, 6, 
      6, 6, 6, 6, 6, 6], 

@@ -12,7 +12,7 @@ my $game;
 
 diag("No strategy");
 #$game = Illuminated::Game->standard_test();
-$game = Illuminated::Game->init_test('standard_game', 
+$game = Illuminated::Game->init_test('Illuminated::Tile::GuardedSpace', 
     [6, 6, 6, 4, 2, 4, 2, 2, 2,
      6, 6, 6, 4, 2, 4, 2, 2, 2,], 
     [8, 4], 

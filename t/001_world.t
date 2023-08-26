@@ -10,7 +10,7 @@ use File::Compare;
 diag("Main library load");
 require_ok('Illuminated::Game');
 my $game = Illuminated::Game->new();
-$game->standard_game();
+$game->one_tile('Illuminated::Tile::GuardedSpace');
 
 diag("Two players created");
 is(@{$game->players}, 2);

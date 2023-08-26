@@ -12,7 +12,7 @@ my $log;
 `rm -f t/tmp/*`;
 
 diag("Testing station setting");
-$game = Illuminated::Game->init_test('station_game', 
+$game = Illuminated::Game->init_test('Illuminated::Tile::SpaceStationAssault', 
     [6, 6, 6, 6, 6, 6, 6, 6],
     [], 
     ['A', 'A', 'quit']);

@@ -4,18 +4,8 @@ use v5.10;
 use Moo;
 use Data::Dumper;
 use Illuminated::Weapon;
-use Illuminated::Weapon::Balthazar;
-use Illuminated::Weapon::Caliban;
-use Illuminated::Weapon::Gospel;
-use Illuminated::Device::Jammer;
-use Illuminated::Device::SwarmGun;
-use Illuminated::Device::CoriolisThruster;
-use Illuminated::Device::FleuretThruster;
 use Illuminated::Element::Stand::Player;
 use Illuminated::Element::Stand::Foe;
-use Illuminated::Tile::GuardedSpace;
-use Illuminated::Tile::ShipEncounter;
-use Illuminated::Tile::SpaceStationAssault;
 
 
 has players => (
@@ -83,146 +73,7 @@ with 'Illuminated::Role::Interactive::Game';
 with 'Illuminated::Role::Logger';
 with 'Illuminated::Role::Destiny';
 with 'Illuminated::Role::Recorder';
-
-sub init_test
-{
-    my $package = shift;
-    my $game_start = shift;
-    my $loaded_dice = shift;
-    my $fake_random = shift;
-    my $auto_commands = shift;
-    my $game = Illuminated::Game->new(
-        {   loaded_dice => $loaded_dice, 
-            auto_commands => $auto_commands,
-            fake_random => $fake_random,
-            log_prefix => 'test',
-        }
-    );
-    $game->log_prefix('test');
-    $game->$game_start;
-    return $game;
-}
-
-sub load_test
-{
-    my $package = shift;
-    my $file = shift;
-    my $loaded_dice = shift;
-    my $fake_random = shift;
-    my $auto_commands = shift;
-    my $game = Illuminated::Game->new(
-        {   loaded_dice => $loaded_dice, 
-            auto_commands => $auto_commands,
-            fake_random => $fake_random,
-            log_prefix => 'test',
-        }
-    );
-    $game->log_prefix('test');
-    $game->load($file);
-    return $game;
-}
-
-
-
-sub init_ia
-{
-    my $package = shift;
-    my $game_start = shift;
-    my $ia_string = shift;
-    my $counter = shift;
-    my @chunks = ( $ia_string =~ m/../g );
-    my @commands = ('N', 'N');
-    for(@chunks)
-    {
-        push @commands, '@' . $_;
-    }
-    my $game = Illuminated::Game->new(
-        {   auto_commands => \@commands,
-            ia_players => 1,
-            log_prefix => 'ia' . $counter,
-            on_screen => 0,
-        }
-    );
-    $game->$game_start;
-    $game->log("IA STRING: $ia_string");
-    return $game;
-}
-
-sub configure_scenario
-{
-    my $self = shift;
-    my $loaded_dice = shift;
-    my $fake_random = shift;
-    my $auto_commands = shift;
-    my $title = shift;
-    $self->loaded_dice($loaded_dice);
-    $self->loaded_dice_counter(0);
-    $self->auto_commands($auto_commands);
-    $self->auto_commands_counter(0);
-    $self->fake_random($fake_random);
-    $self->fake_random_counter(0);
-    if($title)
-    {
-        $self->log("\n##### $title #####")
-    }
-    else
-    {
-        $self->log("\n");
-    }
-    $self->running(1);
-}
-
-sub station_test
-{
-    my $package = shift;
-
-    my $game = $package->init_test('station_game', 
-                                    [6, 6, 6, 6, 6, 6, 6, 6],
-                                    [], 
-                                    ['A', 'A', 'quit']);
-    $game->run();
-    $game->log("========== SHIP TEST GENERATION ENDED ==============");
-    return $game;
-}
-
-sub one_tile
-{
-    my $self = shift;
-    my $tile = shift;
-    $self->init_log;
-    my $player;
-    $player = $self->add_player('Paladin', 'Maverick', $self->player_templates->{'Maverick'});
-    $player->add_weapon(Illuminated::Weapon::Balthazar->new());
-    $player->add_weapon(Illuminated::Weapon::Caliban->new());
-    $player->add_device(Illuminated::Device::Jammer->new());
-    $player->add_device(Illuminated::Device::FleuretThruster->new());
-    $player = $self->add_player('Templar', 'Tesla', $self->player_templates->{'Tesla'});
-    $player->add_weapon(Illuminated::Weapon::Balthazar->new());
-    $player->add_weapon(Illuminated::Weapon::Caliban->new());
-    #$player->add_weapon(Illuminated::Weapon::Gospel->new());
-    $player->add_device(Illuminated::Device::SwarmGun->new());
-    $player->add_device(Illuminated::Device::CoriolisThruster->new());
-    $self->current_tile($tile);
-}
-
-
-sub standard_game
-{
-    my $self  = shift;
-    $self->one_tile(Illuminated::Tile::GuardedSpace->new());    
-}
-
-sub ship_game
-{
-    my $self  = shift;
-    $self->one_tile(Illuminated::Tile::ShipEncounter->new());    
-}
-
-sub station_game
-{
-    my $self  = shift;
-    $self->one_tile(Illuminated::Tile::SpaceStationAssault->new());    
-}
+with 'Illuminated::Role::Tester';
 
 sub active_player
 {
