@@ -3,17 +3,28 @@ use v5.10;
 use lib 'lib';
 
 use Test::More;
+use File::Compare;
 use Illuminated::Game;
 
 my $game;
 
+`rm -f t/tmp/*`;
+
 diag("No strategy");
-$game = Illuminated::Game->standard_test();
+#$game = Illuminated::Game->standard_test();
+$game = Illuminated::Game->init_test('standard_game', 
+    [6, 6, 6, 4, 2, 4, 2, 2, 2,
+     6, 6, 6, 4, 2, 4, 2, 2, 2,], 
+    [8, 4], 
+    ['N', 'N', 'quit']);
 diag("Log file is: " . $game->log_name);
+$game->run();
+$game->write_all("t/tmp/004save.cvs");
+diag("Save file correctly generated");
+is(compare("t/tmp/004save.cvs", "t/saves/v1/004.csv"), 0);
 
 my $p1 = $game->players->[0];
 my $p2 = $game->players->[1];
-
 
 #[ 'alpha',   'thug',      [ 'balthazar']        ],
 #[ 'beta',    'thug',      [ 'balthazar']        ],
@@ -24,8 +35,6 @@ my $p2 = $game->players->[1];
 #[ 'iota',    'gunner',    [ 'reiter' ]          ],
 #[ 'csi',     'gladiator', [ 'caliban', 'aegis' ] ],
 #[ 'pi',      'gladiator', [ 'caliban', 'aegis' ] ],
-
-
 
 is($game->foes->[0]->aware, 0, $game->foes->[0]->name . " is unaware"); #alpha
 

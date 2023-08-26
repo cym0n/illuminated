@@ -51,9 +51,9 @@ sub write_distance_matrix
     my $self = shift;
     my $io = shift;
     print {$io} "### DISTANCE MATRIX\n";
-    foreach my $i (keys %{$self->distance_matrix})
+    foreach my $i (sort keys %{$self->distance_matrix})
     {
-        foreach my $j (keys %{$self->{distance_matrix}->{$i}})
+        foreach my $j (sort keys %{$self->{distance_matrix}->{$i}})
         {
             print {$io} join(";", $i, $j, $self->{distance_matrix}->{$i}->{$j}) . "\n"
         }
@@ -65,7 +65,7 @@ sub write_ground_position
     my $self = shift;
     my $io = shift;
     print {$io} "### GROUND POSITION\n";
-    foreach  my $i (keys %{$self->ground_position})
+    foreach  my $i (sort keys %{$self->ground_position})
     {
         print {$io} join(";", $i, $self->ground_position->{$i});
     } 
@@ -225,11 +225,11 @@ sub load
                     if($data[0] eq 'DATA')
                     {
                         $obj = $self->add_foe($data[2], $data[1], 1);
-                        $obj->health($data[4]);
-                        $obj->energy($data[5]);
-                        $obj->cover($data[6]);
-                        $obj->aware($data[7]);
-                        $obj->action_points($data[8]);
+                        $obj->health($data[4] || 0);
+                        $obj->energy($data[5] || 0);
+                        $obj->cover($data[6] || 0);
+                        $obj->aware($data[7] || 0);
+                        $obj->action_points($data[8] || 0);
                         $obj->focus($data[9]);
                     }
                 }
