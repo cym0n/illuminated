@@ -5,12 +5,14 @@ use lib 'lib';
 use Test::More;
 use Illuminated::Game;
 
+`rm -f t/tmp/*`;
+
 my $game;
 my $log;
 
 
 diag("Testing station setting");
-$game = Illuminated::Game->station_test();
+$game = Illuminated::Game->load_test('t/preco/v1.1/station_test.csv');
 diag("Log file is: " . $game->log_name);
 
 my $p1 = $game->players->[0];
@@ -57,3 +59,5 @@ ok($game->find_log('beta: pursuit from above (landing)', "=== RUN ==="), 'beta c
 is($game->random_dice_counter, 0, "No real dice");
 is($game->true_random_counter, 0, "No true random numbers");
 done_testing();
+
+$game->write_all("t/tmp/014save.cvs");

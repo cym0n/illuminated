@@ -3,6 +3,7 @@ use v5.10;
 use lib 'lib';
 
 use Test::More;
+use File::Compare;
 use Illuminated::Game;
 
 my $game;
@@ -18,8 +19,8 @@ $game = Illuminated::Game->init_test('station_game',
 diag("Log file is: " . $game->log_name);
 $game->run;
 $game->write_all("t/tmp/013save.cvs");
-#diag("Save file correctly generated");
-#is(compare("t/tmp/004save.cvs", "t/saves/v1/004.csv"), 0);
+diag("Save file correctly generated");
+is(compare("t/tmp/013save.cvs", "t/saves/v1.1/013.csv"), 0);
 
 my $p1 = $game->players->[0];
 my $p2 = $game->players->[1];

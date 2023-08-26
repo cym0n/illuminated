@@ -72,7 +72,7 @@ sub write_ground_position
     print {$io} "### GROUND POSITION\n";
     foreach  my $i (sort keys %{$self->ground_position})
     {
-        print {$io} join(";", $i, $self->ground_position->{$i}->tag) . "\n";
+        print {$io} join(";", $i, $self->ground_position->{$i}->tag) . "\n" if $self->ground_position->{$i};
     } 
     print {$io} "### END GROUND POSITION\n";
 }
@@ -145,6 +145,8 @@ sub load
 
     $self->init_log;
 
+    my @focus_table = ();
+
     open(my $io, "< $savefile");
     my $version;
     my $subsection = undef;
@@ -212,7 +214,9 @@ sub load
                 }
                 elsif($subsection eq 'ground position')
                 {
-                    $self->ground_position->{$data[0]} = $data[1];
+                    #Subsection ground position must be processed after all the elements are added
+                    my $g = $self->get_from_tag($data[1]);
+                    $self->ground_position->{$data[0]} = $g;
                 }
                 elsif($subsection eq 'player')
                 {
@@ -246,19 +250,35 @@ sub load
                         $obj->cover($data[6] || 0);
                         $obj->aware($data[7] || 0);
                         $obj->action_points($data[8] || 0);
-                        $obj->focus($data[9]);
+                        #$obj->focus($data[9]);
+                        if($data[9])
+                        {
+                            push @focus_table, { foe => $obj, focus => $data[9] };
+                        }
                     }
                 }
                 elsif($subsection eq 'other')
                 {
                     if($data[0] eq 'DATA')
                     {
-                        $obj = $self->add_other($data[2], $data[1], 1);
+                        if($data[1] eq 'Illuminated::Element::Scenario')
+                        {
+                            $obj = $self->add_other({ name => $data[2], type => $data[3] }, $data[1], 1);
+                        }
+                        else
+                        {
+                            $obj = $self->add_other($data[2], $data[1], 1);
+                        }
                         $obj->health($data[4] || 0);
                     }
                 }
             }
         }
+    }
+    foreach my $focus (@focus_table)
+    {
+        my $f = $self->get_from_tag($focus->{focus});
+        $focus->{foe}->focus($f);
     }
     $self->log("Game loaded from: $savefile");
 }

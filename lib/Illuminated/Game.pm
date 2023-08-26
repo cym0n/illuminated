@@ -444,7 +444,7 @@ sub add_other
     my $other_package = shift;
     my $no_distance = shift;
     my $f = undef;
-    if(ref($name))
+    if(ref($name) =~ /^Illuminated::Element/)
     {
         $f = $name;
     }
@@ -521,6 +521,25 @@ sub get_any
     }
     return undef;
 }
+sub get_from_tag
+{
+    my $self = shift;
+    my $tag = shift;
+    if($tag =~ /^(.)-(.*)$/)
+    {
+        my $what = $1;
+        my $who = $2;
+        if($what eq 'P')
+        {
+            return $self->get_player($who)
+        }
+        else
+        {
+            return $self->get_any($who);
+        }
+    }
+    return undef;
+}
 sub detect_player_foe
 {
     my $self = shift;
@@ -575,7 +594,6 @@ sub get_distance
     my $a = shift;
     my $b = shift;
     my $on_grid = shift;
-    
     if($self->on_ground($a) && $self->on_ground($a)->tag eq $b->tag)
     {
         return 'on surface';

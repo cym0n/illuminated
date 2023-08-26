@@ -235,7 +235,7 @@ around dump => sub
     my $data = shift;
     my $out = $self->$orig();
     $out->{aware} = $self->aware;
-    $out->{focus} = $self->focus;
+    $out->{focus} = $self->focus ? $self->focus->tag : undef;
     $out->{action_points} = $self->action_points;
     return $out;
 };
