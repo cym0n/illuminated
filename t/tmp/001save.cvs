@@ -1,0 +1,18 @@
+####### V1
+GAME;Illuminated::Tile::GuardedSpace;0;1;0
+### DISTANCE MATRIX
+### END DISTANCE MATRIX
+### GROUND POSITION
+### END GROUND POSITION
+### PLAYER
+DATA;Illuminated::Element::Stand::Player;Paladin;Maverick;10;5;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Caliban;caliban
+DEVICES;Illuminated::Device::Jammer;Illuminated::Device::FleuretThruster
+### END PLAYER
+### PLAYER
+DATA;Illuminated::Element::Stand::Player;Templar;Tesla;10;5;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Caliban;caliban
+DEVICES;Illuminated::Device::SwarmGun;Illuminated::Device::CoriolisThruster
+### END PLAYER
