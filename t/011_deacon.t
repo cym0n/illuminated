@@ -10,7 +10,7 @@ my $game;
 
 diag("No strategy");
 #$game = Illuminated::Game->ship_test();
-$game = Illuminated::Game->load_test('t/preco/v1/ship_test.csv');
+$game = Illuminated::Game->load_test('t/preco/v1.1/ship_test.csv');
 diag("Log file is: " . $game->log_name);
 my $ship = $game->get_other('joyful sacrifice');
 my $p1 = $game->players->[0];

@@ -18,7 +18,7 @@ requires 'init_log';
 requires 'log';
 requires 'add_other';
 
-my $dump_version = 1;
+my $dump_version = '1.1';
 
 sub write_all
 {
@@ -29,7 +29,6 @@ sub write_all
     print {$io} "####### V$dump_version\n";
     $self->write_game($io);
     $self->write_distance_matrix($io);
-    $self->write_ground_position($io);
     for(@{$self->players})
     {
         $self->write_player($_->dump, 'PLAYER', $io);
@@ -42,6 +41,7 @@ sub write_all
     {
         $self->write_player($_->dump, 'OTHER', $io);
     }
+    $self->write_ground_position($io);
     close($io);
 }
 sub write_game
@@ -72,7 +72,7 @@ sub write_ground_position
     print {$io} "### GROUND POSITION\n";
     foreach  my $i (sort keys %{$self->ground_position})
     {
-        print {$io} join(";", $i, $self->ground_position->{$i});
+        print {$io} join(";", $i, $self->ground_position->{$i}->tag) . "\n";
     } 
     print {$io} "### END GROUND POSITION\n";
 }
@@ -158,7 +158,7 @@ sub load
             if($line =~ /^####### V(.*)$/)
             {
                 $version = $1;
-                if($version != $dump_version)
+                if($version ne $dump_version)
                 {
                     say "WARNING: Dump of version $version";
                 }

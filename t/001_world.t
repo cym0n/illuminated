@@ -17,7 +17,7 @@ is(@{$game->players}, 2);
 
 $game->write_all("t/tmp/001save.cvs");
 diag("Save file correctly generated");
-is(compare("t/tmp/001save.cvs", "t/saves/v1/001.cvs"), 0);
+is(compare("t/tmp/001save.cvs", "t/saves/v1.1/001.cvs"), 0);
 
 
 

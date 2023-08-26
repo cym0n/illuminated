@@ -25,7 +25,7 @@ for(@{$game->foes})
 }
 $game->write_all("t/tmp/010save.cvs");
 diag("Save file correctly generated");
-is(compare("t/tmp/010save.cvs", "t/saves/v1/010.csv"), 0);
+is(compare("t/tmp/010save.cvs", "t/saves/v1.1/010.csv"), 0);
 
 my $ship = $game->get_other('joyful sacrifice');
 my $p1 = $game->players->[0];
