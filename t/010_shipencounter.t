@@ -3,13 +3,30 @@ use v5.10;
 use lib 'lib';
 
 use Test::More;
+use File::Compare;
 use Illuminated::Game;
 
 my $game;
 
+`rm -f t/tmp/*`;
+
 diag("No strategy");
-$game = Illuminated::Game->ship_test();
+$game = Illuminated::Game->init_test('ship_game', 
+    [6, 6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6, 6, 
+     6, 6, 6, 6, 6, 6], 
+    [], 
+    ['G', 'G', 'quit']);
 diag("Log file is: " . $game->log_name);
+$game->run();
+for(@{$game->foes})
+{
+    $_->deactivate_status('guard X-joyful sacrifice');
+}
+$game->write_all("t/tmp/010save.cvs");
+diag("Save file correctly generated");
+is(compare("t/tmp/010save.cvs", "t/saves/v1/010.csv"), 0);
+
 my $ship = $game->get_other('joyful sacrifice');
 my $p1 = $game->players->[0];
 my $p2 = $game->players->[1];

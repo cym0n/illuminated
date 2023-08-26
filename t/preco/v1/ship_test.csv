@@ -1,0 +1,113 @@
+####### V1
+GAME;Illuminated::Tile::ShipEncounter;0;1;0
+### DISTANCE MATRIX
+P-paladin;F-alpha;far
+P-paladin;F-beta;far
+P-paladin;F-csi;far
+P-paladin;F-delta;far
+P-paladin;F-epsilon;far
+P-paladin;F-eta;far
+P-paladin;F-gamma;far
+P-paladin;F-iota;far
+P-paladin;F-kappa;far
+P-paladin;F-ro;far
+P-paladin;F-theta;far
+P-paladin;F-zeta;far
+P-paladin;X-joyful sacrifice;far
+P-templar;F-alpha;far
+P-templar;F-beta;far
+P-templar;F-csi;far
+P-templar;F-delta;far
+P-templar;F-epsilon;far
+P-templar;F-eta;far
+P-templar;F-gamma;far
+P-templar;F-iota;far
+P-templar;F-kappa;far
+P-templar;F-ro;far
+P-templar;F-theta;far
+P-templar;F-zeta;far
+P-templar;X-joyful sacrifice;far
+### END DISTANCE MATRIX
+### GROUND POSITION
+### END GROUND POSITION
+### PLAYER
+DATA;Illuminated::Element::Stand::Player;Paladin;Maverick;10;5;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Caliban;caliban
+DEVICES;Illuminated::Device::Jammer;Illuminated::Device::FleuretThruster
+### END PLAYER
+### PLAYER
+DATA;Illuminated::Element::Stand::Player;Templar;Tesla;10;5;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Caliban;caliban
+DEVICES;Illuminated::Device::SwarmGun;Illuminated::Device::CoriolisThruster
+### END PLAYER
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;alpha;thug;2;;;1;;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;beta;thug;2;;;1;;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;gamma;thug;2;;;1;;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;epsilon;thug;2;;;1;;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;delta;thug;2;;;1;;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;zeta;thug;2;;;1;;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Gladiator;ro;gladiator;2;;;1;;
+WEAPON;Illuminated::Weapon::Caliban;caliban
+WEAPON;Illuminated::Weapon::Aegis;aegis
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Gladiator;iota;gladiator;2;;;1;;
+WEAPON;Illuminated::Weapon::Caliban;caliban
+WEAPON;Illuminated::Weapon::Aegis;aegis
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Gladiator;csi;gladiator;2;;;1;;
+WEAPON;Illuminated::Weapon::Caliban;caliban
+WEAPON;Illuminated::Weapon::Aegis;aegis
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Gladiator;eta;gladiator;2;;;1;;
+WEAPON;Illuminated::Weapon::Caliban;caliban
+WEAPON;Illuminated::Weapon::Aegis;aegis
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Gladiator;theta;gladiator;2;;;1;;
+WEAPON;Illuminated::Weapon::Caliban;caliban
+WEAPON;Illuminated::Weapon::Aegis;aegis
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Gladiator;kappa;gladiator;2;;;1;;
+WEAPON;Illuminated::Weapon::Caliban;caliban
+WEAPON;Illuminated::Weapon::Aegis;aegis
+DEVICES;
+### END FOE
+### OTHER
+DATA;Illuminated::Element::Scenario::Ship;joyful sacrifice;ship;4
+### END OTHER
