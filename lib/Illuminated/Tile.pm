@@ -35,7 +35,6 @@ sub init
 {
     my $self = shift;
     my $game = shift;
-    $game->log(ref($self));
     $self->init_foes($game);
     $self->init_others($game);
 }

@@ -103,6 +103,27 @@ sub init_test
     return $game;
 }
 
+sub load_test
+{
+    my $package = shift;
+    my $file = shift;
+    my $loaded_dice = shift;
+    my $fake_random = shift;
+    my $auto_commands = shift;
+    my $game = Illuminated::Game->new(
+        {   loaded_dice => $loaded_dice, 
+            auto_commands => $auto_commands,
+            fake_random => $fake_random,
+            log_prefix => 'test',
+        }
+    );
+    $game->log_prefix('test');
+    $game->load($file);
+    return $game;
+}
+
+
+
 sub init_ia
 {
     my $package = shift;

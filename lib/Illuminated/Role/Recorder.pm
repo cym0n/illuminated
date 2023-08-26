@@ -15,6 +15,7 @@ requires 'add_player';
 requires 'player_templates';
 requires 'add_foe';
 requires 'init_log';
+requires 'log';
 
 my $dump_version = 1;
 
@@ -235,4 +236,5 @@ sub load
             }
         }
     }
+    $self->log("Game loaded from: $savefile");
 }
