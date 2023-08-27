@@ -67,6 +67,7 @@ sub init_ia
     my $ia_string = shift;
     my $counter = shift;
     my $load = shift;
+    my $clever = shift;
     my @chunks = ( $ia_string =~ m/../g );
     my @commands = ('N', 'N');
     for(@chunks)
@@ -78,6 +79,7 @@ sub init_ia
             ia_players => 1,
             log_prefix => 'ia' . $counter,
             on_screen => 0,
+            clever => $clever,
         }
     );
     if($load)

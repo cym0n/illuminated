@@ -24,6 +24,10 @@ has ia_players => (
     is => 'rw',
     default => 0,
 );
+has clever => (
+    is => 'rw',
+    default => 0
+);
 
 has ia_miss => (
     is => 'rw',
@@ -44,6 +48,11 @@ sub auto
         $game->auto_commands_counter($game->auto_commands_counter + 1);    
         if($self->ia_players)
         {
+            if($self->clever)
+            {
+                my $clever_value = $self->clever_auto($game);
+                return $clever_value if $clever_value;
+            }
             my $ia_value = $self->process_ia_command($game, $value);
             if($ia_value eq '???')
             {
@@ -65,6 +74,26 @@ sub auto
         return undef;
     }
 }
+sub clever_auto
+{
+    my $self = shift;
+    my $game = shift;
+    my $p = $game->active_player;
+
+    #If strong in close combat and enemy close strikes
+    my ( $target ) = $game->at_distance($p, 'close', 0);
+    if($target && $p->power == 3)
+    {
+        return 'A1';
+    } 
+    elsif($target && $p->power == 1)
+    {
+        return 'F';
+    }
+    return undef;
+}
+
+
 sub process_ia_command
 {
     my $self = shift;

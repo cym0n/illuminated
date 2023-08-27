@@ -13,7 +13,8 @@ my $tries = 1;
 my $generations = 1;
 my $to_print = 'a';
 my $load = undef;
-GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries, "gens=i" => \$generations, "to-print=s" => \$to_print, "load=s" => \$load); 
+my $clever = 0;
+GetOptions("ia" => \$ia, "length=i" => \$length, "tries=i" => \$tries, "gens=i" => \$generations, "to-print=s" => \$to_print, "load=s" => \$load, "clever" => \$clever); 
 my $game_type = shift || 'standard_game';
 
 my %games = (
@@ -34,7 +35,7 @@ if($ia)
         my $string = ia_string($length);
         for(my $i = 0; $i < $tries; $i++)
         {
-            my $game = Illuminated::Game->init_ia($games{$game_type}, $string, $i, $load);
+            my $game = Illuminated::Game->init_ia($games{$game_type}, $string, $i, $load, $clever);
             $game->run();
             my $outcome = ia_report($game);
             $counters{$outcome} = $counters{$outcome} + 1;
