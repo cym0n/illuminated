@@ -4,6 +4,9 @@ use lib 'lib';
 
 use Test::More;
 use Illuminated::Game;
+use File::Compare;
+
+`rm -f t/tmp/*`;
 
 my $game;
 
@@ -24,6 +27,9 @@ $game->run;
 ok(! $alpha->has_status('jammed'), $alpha->name . " is not jammed as unaware");
 ok($epsilon->has_status('jammed'), $epsilon->name . " is jammed");
 is($p1->energy, 4, "Paladin spent an energy unit for jamming");
+$game->write_all("t/tmp/008save.csv");
+diag("Save file correctly generated");
+is(compare("t/tmp/008save.csv", "t/saves/v1.1/008.csv"), 0);
 
 diag("Paladin and Templar fly around until jamming effect fades");
 $game->configure_scenario( 

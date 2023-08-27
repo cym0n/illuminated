@@ -132,7 +132,7 @@ sub write_status
         print {$io} "#### STATUS\n";
         foreach my $s ( keys %{$status})
         {
-            print {$io} $s ."," . $status->{$s}
+            print {$io} $s ."," . $status->{$s} ."\n"
         }
         print {$io} "#### END STATUS\n";
     }

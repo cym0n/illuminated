@@ -19,9 +19,9 @@ $game = Illuminated::Game->init_test('Illuminated::Tile::GuardedSpace',
     ['N', 'N', 'quit']);
 diag("Log file is: " . $game->log_name);
 $game->run();
-$game->write_all("t/tmp/004save.cvs");
+$game->write_all("t/tmp/004save.csv");
 diag("Save file correctly generated");
-is(compare("t/tmp/004save.cvs", "t/saves/v1.1/004.csv"), 0);
+is(compare("t/tmp/004save.csv", "t/saves/v1.1/004.csv"), 0);
 
 my $p1 = $game->players->[0];
 my $p2 = $game->players->[1];
