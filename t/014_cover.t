@@ -3,6 +3,7 @@ use v5.10;
 use lib 'lib';
 
 use Test::More;
+use File::Compare;
 use Illuminated::Game;
 
 `rm -f t/tmp/*`;
@@ -39,6 +40,9 @@ ok(! $game->on_ground($p1), $p1->name . " is not on ground anymore");
 is($game->get_distance($p2, $gamma), 'close', $gamma->name . " is close to " . $p1->name);
 ok(! $p2->cover, $p2->name. " cover broken");
 ok($p2->has_status('no-cover'), $p2->name . ": no cover available");
+$game->write_all("t/tmp/014save.csv");
+diag("Save file correctly generated");
+is(compare("t/tmp/014save.csv", "t/saves/v1.1/014.csv"), 0);
 
 diag("Templar smashes gamma but cannot cover once free, receiving damage");
 diag("Alpha close to Paladin cannot attack from above");
@@ -60,4 +64,3 @@ is($game->random_dice_counter, 0, "No real dice");
 is($game->true_random_counter, 0, "No true random numbers");
 done_testing();
 
-$game->write_all("t/tmp/014save.cvs");

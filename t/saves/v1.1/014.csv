@@ -1,0 +1,66 @@
+####### V1.1
+GAME;Illuminated::Tile::SpaceStationAssault;0;1;4
+### DISTANCE MATRIX
+P-paladin;F-alpha;far
+P-paladin;F-beta;far
+P-paladin;F-delta;far
+P-paladin;F-gamma;near
+P-paladin;X-airlock;far
+P-paladin;X-tortuga;near
+P-templar;F-alpha;far
+P-templar;F-beta;far
+P-templar;F-delta;near
+P-templar;F-gamma;close
+P-templar;X-airlock;far
+P-templar;X-tortuga;near
+### END DISTANCE MATRIX
+### PLAYER
+DATA;Illuminated::Element::Stand::Player;Paladin;Maverick;10;5;
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Caliban;caliban
+DEVICES;Illuminated::Device::Jammer;Illuminated::Device::FleuretThruster
+### END PLAYER
+### PLAYER
+DATA;Illuminated::Element::Stand::Player;Templar;Tesla;10;5;
+#### STATUS
+no-cover,2
+#### END STATUS
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Caliban;caliban
+DEVICES;Illuminated::Device::SwarmGun;Illuminated::Device::CoriolisThruster
+### END PLAYER
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Carrier;alpha;carrier;2;;;1;;P-paladin
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Gospel;gospel
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Carrier;beta;carrier;2;;;1;;P-templar
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+WEAPON;Illuminated::Weapon::Gospel;gospel
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;gamma;thug;2;;;1;;P-templar
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### FOE
+DATA;Illuminated::Element::Stand::Foe::Thug;delta;thug;2;;;1;;P-templar
+WEAPON;Illuminated::Weapon::Balthazar;balthazar
+DEVICES;
+### END FOE
+### OTHER
+DATA;Illuminated::Element::Scenario::SpaceStation;tortuga;space station;
+### END OTHER
+### OTHER
+DATA;Illuminated::Element::Scenario;airlock;space station component;20
+### END OTHER
+### GROUND POSITION
+F-beta;X-tortuga
+F-delta;X-tortuga
+F-gamma;X-tortuga
+P-templar;X-tortuga
+X-airlock;X-tortuga
+### END GROUND POSITION
