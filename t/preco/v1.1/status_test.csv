@@ -1,5 +1,5 @@
 ####### V1.1
-GAME;Illuminated::Tile::GuardedSpace;1;1;0
+GAME;Illuminated::Tile::GuardedSpace;0;1;0
 ### DISTANCE MATRIX
 P-paladin;F-alpha;none
 P-paladin;F-beta;none
@@ -21,7 +21,7 @@ P-templar;F-pi;near
 P-templar;F-ro;far
 ### END DISTANCE MATRIX
 ### PLAYER
-DATA;Illuminated::Element::Stand::Player;Paladin;Maverick;9;5;
+DATA;Illuminated::Element::Stand::Player;Paladin;Maverick;10;5;
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
 #### STATUS
 smoking;2
@@ -31,6 +31,9 @@ DEVICES;Illuminated::Device::Jammer;Illuminated::Device::FleuretThruster
 ### END PLAYER
 ### PLAYER
 DATA;Illuminated::Element::Stand::Player;Templar;Tesla;10;5;
+#### STATUS
+no-cover;2
+#### END STATUS
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
 WEAPON;Illuminated::Weapon::Caliban;caliban
 DEVICES;Illuminated::Device::SwarmGun;Illuminated::Device::CoriolisThruster
@@ -47,20 +50,23 @@ DEVICES;
 ### END FOE
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Thug;gamma;thug;2;;;;;
+#### STATUS
+jammed;3
+#### END STATUS
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
 DEVICES;
 ### END FOE
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Thug;epsilon;thug;2;;;1;;
+#### STATUS
+jammed;3
+#### END STATUS
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
 DEVICES;
 ### END FOE
 ### FOE
-DATA;Illuminated::Element::Stand::Foe::Thug;delta;thug;1;;;1;;P-paladin
+DATA;Illuminated::Element::Stand::Foe::Thug;delta;thug;2;;;1;;
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
-#### STATUS
-smoking;2
-#### END STATUS
 DEVICES;
 ### END FOE
 ### FOE

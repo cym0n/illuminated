@@ -23,7 +23,7 @@ DEVICES;Illuminated::Device::Jammer;Illuminated::Device::FleuretThruster
 ### PLAYER
 DATA;Illuminated::Element::Stand::Player;Templar;Tesla;10;5;
 #### STATUS
-no-cover,2
+no-cover;2
 #### END STATUS
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
 WEAPON;Illuminated::Weapon::Caliban;caliban

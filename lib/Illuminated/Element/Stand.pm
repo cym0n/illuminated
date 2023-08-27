@@ -28,6 +28,7 @@ sub add_weapon
     my $self = shift;
     my $weapon = shift;
     push @{$self->weapons}, $weapon;
+    return $weapon;
 }
 
 sub add_device
@@ -35,6 +36,7 @@ sub add_device
     my $self = shift;
     my $device = shift;
     push @{$self->devices}, $device;
+    return $device;
 }
 
 sub get_weapons_by_range

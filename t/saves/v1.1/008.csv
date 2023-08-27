@@ -50,7 +50,7 @@ DEVICES;
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Thug;epsilon;thug;2;;;1;;
 #### STATUS
-jammed,3
+jammed;3
 #### END STATUS
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
 DEVICES;
@@ -58,7 +58,7 @@ DEVICES;
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Thug;delta;thug;2;;;1;;
 #### STATUS
-jammed,3
+jammed;3
 #### END STATUS
 WEAPON;Illuminated::Weapon::Balthazar;balthazar
 DEVICES;
@@ -66,7 +66,7 @@ DEVICES;
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Gunner;ro;gunner;2;;;1;;
 #### STATUS
-jammed,3
+jammed;3
 #### END STATUS
 WEAPON;Illuminated::Weapon::Reiter;reiter
 DEVICES;
@@ -74,7 +74,7 @@ DEVICES;
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Gunner;iota;gunner;2;;;1;;
 #### STATUS
-jammed,3
+jammed;3
 #### END STATUS
 WEAPON;Illuminated::Weapon::Reiter;reiter
 DEVICES;
@@ -82,7 +82,7 @@ DEVICES;
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Gladiator;csi;gladiator;2;;;1;;
 #### STATUS
-jammed,3
+jammed;3
 #### END STATUS
 WEAPON;Illuminated::Weapon::Caliban;caliban
 WEAPON;Illuminated::Weapon::Aegis;aegis
@@ -91,7 +91,7 @@ DEVICES;
 ### FOE
 DATA;Illuminated::Element::Stand::Foe::Gladiator;pi;gladiator;2;;;1;;
 #### STATUS
-jammed,3
+jammed;3
 #### END STATUS
 WEAPON;Illuminated::Weapon::Caliban;caliban
 WEAPON;Illuminated::Weapon::Aegis;aegis

@@ -132,7 +132,7 @@ sub write_status
         print {$io} "#### STATUS\n";
         foreach my $s ( keys %{$status})
         {
-            print {$io} $s ."," . $status->{$s} ."\n"
+            print {$io} $s .";" . $status->{$s} ."\n"
         }
         print {$io} "#### END STATUS\n";
     }
@@ -151,6 +151,8 @@ sub load
     my $version;
     my $subsection = undef;
     my $obj = undef;
+    my $subobj = undef;
+    my $status_block = 0;
     for(<$io>)
     {
         chomp;
@@ -200,76 +202,93 @@ sub load
         }
         else
         {
-            if($line =~ /^### END/)
+            if($line eq '#### END STATUS')
+            {
+                $status_block = 0;
+            }
+            elsif($line =~ /^### END/)
             {
                 $subsection = undef;
                 $obj = undef;
+                $subobj = undef;
+            }
+            elsif($line eq '#### STATUS')
+            {
+                $status_block = 1;
             }
             else
             {
                 my @data = split(";", $line);
-                if($subsection eq 'distance matrix')
+                if($status_block)
                 {
-                    $self->distance_matrix->{$data[0]}->{$data[1]} = $data[2];
+                    my $target = $subobj ? $subobj : $obj;
+                    $target->apply_status($data[0], $data[1]);
                 }
-                elsif($subsection eq 'ground position')
+                else
                 {
-                    #Subsection ground position must be processed after all the elements are added
-                    my $g = $self->get_from_tag($data[1]);
-                    $self->ground_position->{$data[0]} = $g;
-                }
-                elsif($subsection eq 'player')
-                {
-                    if($data[0] eq 'DATA')
+                    if($subsection eq 'distance matrix')
                     {
-                        $obj = $self->add_player($data[2], $data[3], $self->player_templates->{$data[3]});
-                        $obj->health($data[4]);
-                        $obj->energy($data[5]);
+                        $self->distance_matrix->{$data[0]}->{$data[1]} = $data[2];
                     }
-                    elsif($data[0] eq 'WEAPON')
+                    elsif($subsection eq 'ground position')
                     {
-                        eval("require $data[1]");
-                        $obj->add_weapon($data[1]->new());
+                        #Subsection ground position must be processed after all the elements are added
+                        my $g = $self->get_from_tag($data[1]);
+                        $self->ground_position->{$data[0]} = $g;
                     }
-                    elsif($data[0] eq 'DEVICES')
+                    elsif($subsection eq 'player')
                     {
-                        for(my $i = 1; $i < scalar @data; $i++)
+                        if($data[0] eq 'DATA')
                         {
-                            eval("require $data[$i]");
-                            $obj->add_device($data[$i]->new());
+                            $obj = $self->add_player($data[2], $data[3], $self->player_templates->{$data[3]});
+                            $obj->health($data[4]);
+                            $obj->energy($data[5]);
+                        }
+                        elsif($data[0] eq 'WEAPON')
+                        {
+                            eval("require $data[1]");
+                            $subobj = $obj->add_weapon($data[1]->new());
+                        }
+                        elsif($data[0] eq 'DEVICES')
+                        {
+                            for(my $i = 1; $i < scalar @data; $i++)
+                            {
+                                eval("require $data[$i]");
+                                $subobj = $obj->add_device($data[$i]->new());
+                            }
                         }
                     }
-                }
-                elsif($subsection eq 'foe')
-                {
-                    if($data[0] eq 'DATA')
+                    elsif($subsection eq 'foe')
                     {
-                        $obj = $self->add_foe($data[2], $data[1], 1);
-                        $obj->health($data[4] || 0);
-                        $obj->energy($data[5] || 0);
-                        $obj->cover($data[6] || 0);
-                        $obj->aware($data[7] || 0);
-                        $obj->action_points($data[8] || 0);
-                        #$obj->focus($data[9]);
-                        if($data[9])
+                        if($data[0] eq 'DATA')
                         {
-                            push @focus_table, { foe => $obj, focus => $data[9] };
+                            $obj = $self->add_foe($data[2], $data[1], 1);
+                            $obj->health($data[4] || 0);
+                            $obj->energy($data[5] || 0);
+                            $obj->cover($data[6] || 0);
+                            $obj->aware($data[7] || 0);
+                            $obj->action_points($data[8] || 0);
+                            #$obj->focus($data[9]);
+                            if($data[9])
+                            {
+                                push @focus_table, { foe => $obj, focus => $data[9] };
+                            }
                         }
                     }
-                }
-                elsif($subsection eq 'other')
-                {
-                    if($data[0] eq 'DATA')
+                    elsif($subsection eq 'other')
                     {
-                        if($data[1] eq 'Illuminated::Element::Scenario')
+                        if($data[0] eq 'DATA')
                         {
-                            $obj = $self->add_other({ name => $data[2], type => $data[3] }, $data[1], 1);
+                            if($data[1] eq 'Illuminated::Element::Scenario')
+                            {
+                                $obj = $self->add_other({ name => $data[2], type => $data[3] }, $data[1], 1);
+                            }
+                            else
+                            {
+                                $obj = $self->add_other($data[2], $data[1], 1);
+                            }
+                            $obj->health($data[4] || 0);
                         }
-                        else
-                        {
-                            $obj = $self->add_other($data[2], $data[1], 1);
-                        }
-                        $obj->health($data[4] || 0);
                     }
                 }
             }

@@ -20,6 +20,15 @@ sub has_status
     return grep { $_ =~ /^$s/ } @{$self->status}
 }
 
+sub status_duration
+{
+    my $self = shift;
+    my $s = shift;
+    return undef if ! $self->has_status($s);
+    return undef if ! defined $self->status_counter->{$s};
+    return $self->status_counter->{$s};
+}
+
 sub activate_status
 {
     my $self = shift;
@@ -41,6 +50,18 @@ sub activate_status
         }
     }
 }
+
+#Used by load
+sub apply_status
+{
+    my $self = shift;
+    my $s = shift;
+    my $counter = shift;
+    return if($self->has_status($s));
+    push @{$self->status}, $s;
+    $self->status_counter->{$s} = $counter;
+}
+
 sub deactivate_status
 {
     my $self = shift;
