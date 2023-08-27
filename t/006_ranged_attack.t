@@ -3,9 +3,12 @@ use v5.10;
 use lib 'lib';
 
 use Test::More;
+use File::Compare;
 use Illuminated::Game;
 
 my $game;
+
+`rm -f t/tmp/*`;
 
 diag("No strategy");
 $game = Illuminated::Game->load_test('t/preco/v1.1/standard_test.csv');
@@ -22,6 +25,11 @@ $game->configure_scenario( [4, 3], [0], ['A1 delta', 'quit'] );
 $game->run;
 is($delta->health, 1, $delta->name . " health decreased");
 is($p1->health, 9, $p1->name . " health decreased");
+ok($p1->get_weapon('balthazar')->has_status('smoking'), $p1->name . "'s balthazar is smoking");
+$game->write_all("t/tmp/006save.csv");
+diag("Save file correctly generated");
+is(compare("t/tmp/006save.csv", "t/saves/v1.1/006.csv"), 0);
+
 diag("Templar shoots delta with consequences");
 diag("Delta killed, action point to ro. Ro shoots Templar");
 diag("End turn action point: epsilon flies to paladin");

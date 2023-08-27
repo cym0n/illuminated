@@ -16,4 +16,18 @@ around BUILDARGS => sub {
     });
 };
 
+sub calculate_effects
+{
+    my $self = shift;
+    my $game = shift;
+    my $event = shift;
+    my $data = shift;
+    if($event eq 'after attack')
+    {
+        #Dummy status for test purpose
+        $game->log($self->name . " is smoking");
+        $self->activate_status('smoking', 2);
+    }
+}
+
 1;
