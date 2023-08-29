@@ -88,7 +88,26 @@ sub clever_auto
     } 
     elsif($target && $p->power == 1)
     {
-        return 'F';
+        return 'D';
+    }
+    if($p->get_device('swarmgun') && scalar( $game->at_distance($p, 'near', 0)) >= 3)
+    {
+        foreach my $d (keys %{$game->interface_devices})
+        {
+            if($game->interface_devices->{$d} eq 'swarmgun')
+            {
+                return $d;
+            }
+        }
+    }
+    ( $target ) = $game->at_distance($p, 'near', 1);
+    if($target and $p->mind == 3)
+    {
+        return 'A1 ' . $target->name
+    }
+    elsif($target and $p->power == 3)
+    {
+        return 'C ' . $target->name
     }
     return undef;
 }
@@ -135,7 +154,7 @@ sub process_ia_command
         {
             @order = ( 'near', 'far' );
         }
-        elsif($1 eq 'C')
+        elsif($1 eq 'F')
         {
             @order = ( 'far', 'near' );
         }

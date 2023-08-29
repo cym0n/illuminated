@@ -27,8 +27,11 @@ my $start_enemies;
 if($ia)
 {
     my %counters = ( 'v' => 0,
-                     's' => 0,
-                     'u' => 0 );
+                     'd' => 0,
+                     'u' => 0, 
+                     'foes' => 0,
+                     'games' => 0);
+
     for(my $j = 0; $j < $generations; $j++)
     {
         say "\nGenerating random IA string number $j";
@@ -37,14 +40,17 @@ if($ia)
         {
             my $game = Illuminated::Game->init_ia($games{$game_type}, $string, $i, $load, $clever);
             $game->run();
-            my $outcome = ia_report($game);
+            my ($outcome, $foes) = ia_report($game);
             $counters{$outcome} = $counters{$outcome} + 1;
+            $counters{'games'} =  $counters{'games'} + 1;
+            $counters{'foes'} =  $counters{'foes'} + $foes;
         }
     }
     say "=======";
     say "VICTORIES: " . $counters{'v'};
-    say "DEFEATS: " . $counters{'s'};
+    say "DEFEATS: " . $counters{'d'};
     say "UNFINISHED: " . $counters{'u'};
+    say "AVERAGE SURVIVED ENEMIES: " . $counters{'foes'} / ( $counters{'d'} + $counters{'u'});
 }
 else
 {
@@ -64,7 +70,12 @@ else
 sub ia_string
 {
     my $length = shift;
-    my @commands = ('AW', 'AS', 'CN', 'CF', 'FF');
+    my @commands = ('AW', #Attack the weakest 
+                    'AS', #Attack the strongest
+                    'CN', #Get closer to a near enemy
+                    'CF', #Get closer to a far enemy
+                    'FF'  #Get away from all
+    );
 
     my $string = '';
     for(my $i = 0; $i < $length; $i++)
@@ -78,31 +89,32 @@ sub ia_string
 sub ia_report
 {
     my $game = shift;
+    my $outcome;
+    my $title;
     if(! @{$game->foes})
     {
-        return 'v' if $to_print eq 'd' || $to_print eq 'u';
-        say "-------";
-        say "VICTORY SCENARIO";
-        say "Turns played: " . $game->turn;
-        say "Log: " . $game->log_name;
-        return 'v';
+        $outcome = 'v';
+        $title = "VICTORY SCENARIO";
     }
-    if(! @{$game->players})
+    elsif(! @{$game->players})
     {
-        return 's' if $to_print eq 'v' || $to_print eq 'u';
-        say "-------";
-        say "DEFEAT SCENARIO";
-        say "Turns played: " . $game->turn;
-        say "Enemies still alive: " . int(@{$game->foes}) . "/" . int(@{$game->current_tile->foes});
-        say "Log: " . $game->log_name;
-        return 's';
+        $outcome = 'd';
+        $title = "DEFEAT SCENARIO";
     }
-    return 'u' if $to_print eq 'v' || $to_print eq 'd';
-    say "-------";
-    say "UNFINISHED SCENARIO";
-    say "Turns played: " . $game->turn;
-    say "Enemies still alive: " . int(@{$game->foes}) . "/" . int(@{$game->current_tile->foes});
-    say "Log: " . $game->log_name;
-    return 'u'
+    else
+    {
+        $outcome = 'u';
+        $title = "UNFINISHED SCENARIO";
+    }
+    if($to_print eq 'a' || $to_print eq $outcome)
+    {
+        say "-------";
+        say $title;
+        say "Turns played: " . $game->turn;
+        say "Enemies still alive: " . int(@{$game->foes}) . "/" . int(@{$game->current_tile->foes}) if($outcome eq 'd' || $outcome eq 'u');
+        say "Log: " . $game->log_name;
+    }
+    my $foes = $outcome eq 'v' ? 0 : int(@{$game->foes});
+    return ($outcome, $foes)
 }
 
